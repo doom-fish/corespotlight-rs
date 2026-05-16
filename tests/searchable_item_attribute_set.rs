@@ -7,6 +7,7 @@ use common::unique_label;
 use corespotlight::prelude::*;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn searchable_items_and_attribute_sets_round_trip() -> Result<(), Box<dyn std::error::Error>> {
     let attributes = CSSearchableItemAttributeSet::new("public.plain-text")?;
     attributes.set_title(Some("Guide"))?;
@@ -20,7 +21,10 @@ fn searchable_items_and_attribute_sets_round_trip() -> Result<(), Box<dyn std::e
     )?;
 
     let added_date = SystemTime::UNIX_EPOCH + Duration::from_secs(1_700_000_000);
-    attributes.set_date(CSSearchableItemAttributeDateField::AddedDate, Some(added_date))?;
+    attributes.set_date(
+        CSSearchableItemAttributeDateField::AddedDate,
+        Some(added_date),
+    )?;
     attributes.set_date_array(
         CSSearchableItemAttributeDateArrayField::ImportantDates,
         [added_date + Duration::from_secs(60)],
@@ -32,13 +36,19 @@ fn searchable_items_and_attribute_sets_round_trip() -> Result<(), Box<dyn std::e
         handle_identifier: "ada@example.com".into(),
         contact_identifier: Some("contact-ada".into()),
     };
-    attributes.set_person_array(CSSearchableItemAttributePersonArrayField::Authors, [person.clone()])?;
+    attributes.set_person_array(
+        CSSearchableItemAttributePersonArrayField::Authors,
+        [person.clone()],
+    )?;
 
     let localized = CSLocalizedString::new(&BTreeMap::from([(
         String::from("en"),
         String::from("Localized display"),
     )]))?;
-    attributes.set_localized_string(CSSearchableItemAttributeStringField::DisplayName, &localized)?;
+    attributes.set_localized_string(
+        CSSearchableItemAttributeStringField::DisplayName,
+        &localized,
+    )?;
 
     let custom_key = CSCustomAttributeKey::new("com.doomfish.tests.customTopic").ok();
     let custom_value = CustomAttributeValue::Array(vec![
@@ -50,7 +60,10 @@ fn searchable_items_and_attribute_sets_round_trip() -> Result<(), Box<dyn std::e
     }
 
     assert_eq!(attributes.title().as_deref(), Some("Guide"));
-    assert_eq!(attributes.content_description().as_deref(), Some("Core Spotlight guide"));
+    assert_eq!(
+        attributes.content_description().as_deref(),
+        Some("Core Spotlight guide")
+    );
     assert_eq!(
         attributes.keywords()?,
         vec![String::from("corespotlight"), String::from("rust")]
@@ -77,14 +90,20 @@ fn searchable_items_and_attribute_sets_round_trip() -> Result<(), Box<dyn std::e
         attributes.person_array(CSSearchableItemAttributePersonArrayField::Authors)?,
         vec![person]
     );
-    assert_eq!(localized.localized_string().as_deref(), Some("Localized display"));
+    assert_eq!(
+        localized.localized_string().as_deref(),
+        Some("Localized display")
+    );
     if let Some(custom_key) = custom_key.as_ref() {
         assert_eq!(attributes.custom_value(custom_key)?, custom_value);
     }
 
     let identifier = unique_label("item");
     let item = CSSearchableItem::new(Some(&identifier), Some("doom-fish.tests"), &attributes)?;
-    assert_eq!(item.unique_identifier().as_deref(), Some(identifier.as_str()));
+    assert_eq!(
+        item.unique_identifier().as_deref(),
+        Some(identifier.as_str())
+    );
     assert_eq!(item.domain_identifier().as_deref(), Some("doom-fish.tests"));
 
     let expiration_date = SystemTime::now() + Duration::from_secs(120);

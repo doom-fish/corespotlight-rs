@@ -7,12 +7,17 @@ use corespotlight::prelude::*;
 fn settings_constants_and_query_contexts_are_available() -> Result<(), Box<dyn std::error::Error>> {
     assert!(core_spotlight_version_number() > 0.0);
     assert!(core_spotlight_api_version() > 0);
-    assert!(!core_spotlight_version_string()?.is_empty());
+    let version_string = core_spotlight_version_string()?;
+    assert!(version_string.contains("CoreSpotlight"));
     assert!(!index_error_domain()?.is_empty());
     assert!(!search_query_error_domain()?.is_empty());
     assert!(!searchable_item_action_type()?.is_empty());
     assert!(!searchable_item_activity_identifier()?.is_empty());
     assert!(!query_continuation_action_type()?.is_empty());
+    assert_eq!(
+        suggestion_highlight_attribute_name()?,
+        String::from("CSSuggestionHighlightAttribute")
+    );
     assert!(!search_query_string_key()?.is_empty());
     assert!(!mailbox_inbox()?.is_empty());
     assert!(!mailbox_drafts()?.is_empty());
@@ -35,25 +40,24 @@ fn settings_constants_and_query_contexts_are_available() -> Result<(), Box<dyn s
     search_context.set_keyboard_language(Some("en-US"))?;
     assert_eq!(search_context.keyboard_language().as_deref(), Some("en-US"));
     search_context.set_source_options(CSSearchQuerySourceOptions::ALLOW_MAIL)?;
-    assert!(
-        search_context
-            .source_options()
-            .contains(CSSearchQuerySourceOptions::ALLOW_MAIL)
-    );
+    assert!(search_context
+        .source_options()
+        .contains(CSSearchQuerySourceOptions::ALLOW_MAIL));
 
     let search_query = CSSearchQuery::new("title == \"Guide\"", Some(&search_context))?;
-    search_query.set_protection_classes(["NSFileProtectionCompleteUntilFirstUserAuthentication"])?;
+    search_query
+        .set_protection_classes(["NSFileProtectionCompleteUntilFirstUserAuthentication"])?;
     assert_eq!(
         search_query.protection_classes()?,
-        vec![String::from("NSFileProtectionCompleteUntilFirstUserAuthentication")]
+        vec![String::from(
+            "NSFileProtectionCompleteUntilFirstUserAuthentication"
+        )]
     );
     search_query.cancel();
     assert!(search_query.is_cancelled());
 
-    let search_query_with_attributes = CSSearchQuery::new_with_attributes(
-        "title == \"Guide\"",
-        ["title", "displayName"],
-    )?;
+    let search_query_with_attributes =
+        CSSearchQuery::new_with_attributes("title == \"Guide\"", ["title", "displayName"])?;
     search_query_with_attributes.cancel();
     assert!(search_query_with_attributes.is_cancelled());
 
@@ -75,14 +79,20 @@ fn settings_constants_and_query_contexts_are_available() -> Result<(), Box<dyn s
     user_query.set_protection_classes(["NSFileProtectionCompleteUntilFirstUserAuthentication"])?;
     assert_eq!(
         user_query.protection_classes()?,
-        vec![String::from("NSFileProtectionCompleteUntilFirstUserAuthentication")]
+        vec![String::from(
+            "NSFileProtectionCompleteUntilFirstUserAuthentication"
+        )]
     );
     user_query.cancel();
     assert!(user_query.is_cancelled());
 
     let (_, item) = sample_item("user-query-item", "Guide")?;
     assert!(user_query
-        .user_engaged_with_item(&item, std::slice::from_ref(&item), CSUserInteraction::Select)
+        .user_engaged_with_item(
+            &item,
+            std::slice::from_ref(&item),
+            CSUserInteraction::Select
+        )
         .is_err());
     Ok(())
 }

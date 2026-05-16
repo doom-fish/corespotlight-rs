@@ -1,4 +1,5 @@
 import CoreSpotlight
+import Darwin
 import Foundation
 
 struct CSHighlightedRangePayload: Codable {
@@ -11,10 +12,18 @@ struct CSLocalizedSuggestionPayload: Codable {
     var highlightedRanges: [CSHighlightedRangePayload]
 }
 
+private func csDynamicCString(named symbolName: String) -> UnsafeMutablePointer<CChar>? {
+    guard let symbol = symbolName.withCString({ dlsym(UnsafeMutableRawPointer(bitPattern: -2), $0) }) else {
+        return nil
+    }
+    let value = UnsafeRawPointer(symbol).assumingMemoryBound(to: CChar.self)
+    return csCString(String(cString: value))
+}
+
 private func csSuggestionPayload(_ suggestion: CSSuggestion) -> CSLocalizedSuggestionPayload {
     let attributed = (suggestion.value(forKey: "localizedAttributedSuggestion") as? NSAttributedString) ?? NSAttributedString(string: "")
     var highlightedRanges: [CSHighlightedRangePayload] = []
-    attributed.enumerateAttribute(.suggestionHighlight, in: NSRange(location: 0, length: attributed.length), options: []) { value, range, _ in
+    attributed.enumerateAttribute(NSAttributedString.Key.suggestionHighlight, in: NSRange(location: 0, length: attributed.length), options: []) { value, range, _ in
         guard value != nil else {
             return
         }
@@ -30,7 +39,7 @@ public func csCoreSpotlightVersionNumber() -> Double {
 
 @_cdecl("cs_core_spotlight_version_string")
 public func csCoreSpotlightVersionString() -> UnsafeMutablePointer<CChar>? {
-    csCString(String(describing: CoreSpotlightVersionNumber))
+    csDynamicCString(named: "CoreSpotlightVersionString")
 }
 
 @_cdecl("cs_core_spotlight_api_version")
@@ -66,6 +75,11 @@ public func csQueryContinuationActionTypeKey() -> UnsafeMutablePointer<CChar>? {
 @_cdecl("cs_search_query_string_key")
 public func csSearchQueryStringKey() -> UnsafeMutablePointer<CChar>? {
     csCString(CSSearchQueryString)
+}
+
+@_cdecl("cs_suggestion_highlight_attribute_name")
+public func csSuggestionHighlightAttributeNameKey() -> UnsafeMutablePointer<CChar>? {
+    csCString(NSAttributedString.Key.suggestionHighlight.rawValue)
 }
 
 @_cdecl("cs_mailbox_inbox")

@@ -20,6 +20,57 @@ public func csAttributeSetNew(
     }
 }
 
+@_cdecl("cs_user_activity_new")
+public func csUserActivityNew(
+    _ activityType: UnsafePointer<CChar>?,
+    _ outActivity: UnsafeMutablePointer<UnsafeMutableRawPointer?>?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    do {
+        guard let activityType else {
+            throw csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing user activity type")
+        }
+        outActivity?.pointee = csRetain(NSUserActivity(activityType: String(cString: activityType)))
+        return CSR_OK
+    } catch let error as NSError {
+        csWriteError(error, to: outError)
+        return Int32(error.code)
+    }
+}
+
+@_cdecl("cs_user_activity_get_activity_type")
+public func csUserActivityGetActivityType(_ activityPtr: UnsafeMutableRawPointer?) -> UnsafeMutablePointer<CChar>? {
+    guard let activityPtr else { return nil }
+    let activity: NSUserActivity = csBorrow(activityPtr)
+    return csCString(activity.activityType)
+}
+
+@_cdecl("cs_user_activity_get_content_attribute_set")
+public func csUserActivityGetContentAttributeSet(_ activityPtr: UnsafeMutableRawPointer?) -> UnsafeMutableRawPointer? {
+    guard let activityPtr else { return nil }
+    let activity: NSUserActivity = csBorrow(activityPtr)
+    return activity.contentAttributeSet.map(csRetain)
+}
+
+@_cdecl("cs_user_activity_set_content_attribute_set")
+public func csUserActivitySetContentAttributeSet(
+    _ activityPtr: UnsafeMutableRawPointer?,
+    _ attributeSetPtr: UnsafeMutableRawPointer?,
+    _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
+) -> Int32 {
+    guard let activityPtr else {
+        let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing user activity")
+        csWriteError(error, to: outError)
+        return Int32(error.code)
+    }
+    let activity: NSUserActivity = csBorrow(activityPtr)
+    activity.contentAttributeSet = attributeSetPtr.map { ptr in
+        let attributeSet: CSSearchableItemAttributeSet = csBorrow(ptr)
+        return attributeSet
+    }
+    return CSR_OK
+}
+
 @_cdecl("cs_attribute_set_get_string")
 public func csAttributeSetGetString(
     _ attributeSetPtr: UnsafeMutableRawPointer?,

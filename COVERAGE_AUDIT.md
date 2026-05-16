@@ -1,10 +1,10 @@
 # corespotlight coverage audit (vs MacOSX26.2.sdk)
 
 SDK_PUBLIC_SYMBOLS: 52
-VERIFIED: 48
-GAPS: 4
+VERIFIED: 52
+GAPS: 0
 EXEMPT: 0
-COVERAGE_PCT: 92.3%
+COVERAGE_PCT: 100.0%
 
 Audit scope: top-level public CoreSpotlight declarations (classes, protocols, categories, exported constants, enums / option sets) plus the public `CoreSpotlightAPIVersion` macro.
 Filtered out from totals: symbols explicitly unavailable on macOS, such as `CSActionIdentifier`, plus iOS-only members inside otherwise-macOS categories.
@@ -14,6 +14,7 @@ No top-level macOS-deprecated declarations were found in the counted symbol set,
 | Symbol | Kind | Header | Wrapped by |
 | --- | --- | --- | --- |
 | CoreSpotlightVersionNumber | constant | CoreSpotlight.h | `core_spotlight_version_number()` |
+| CoreSpotlightVersionString | constant | CoreSpotlight.h | `core_spotlight_version_string()` |
 | CoreSpotlightAPIVersion | macro | CoreSpotlight.h | `core_spotlight_api_version()` |
 | CSIndexErrorDomain | constant | CSSearchableIndex.h | `index_error_domain()` |
 | CSIndexErrorCode | enum | CSSearchableIndex.h | `CSIndexErrorCode` |
@@ -26,6 +27,7 @@ No top-level macOS-deprecated declarations were found in the counted symbol set,
 | CSSearchableItemActivityIdentifier | constant | CSSearchableItem.h | `searchable_item_activity_identifier()` |
 | CSQueryContinuationActionType | constant | CSSearchableItem.h | `query_continuation_action_type()` |
 | CSSearchQueryString | constant | CSSearchableItem.h | `search_query_string_key()` |
+| CSSuggestionHighlightAttributeName | constant | CSSuggestion.h | `suggestion_highlight_attribute_name()` |
 | CSSearchableItemUpdateListenerOptions | option set | CSSearchableItem.h | `CSSearchableItemUpdateListenerOptions` |
 | CSSearchableItem | class | CSSearchableItem.h | `CSSearchableItem::{new,compare_by_rank,attribute_set,...}` |
 | CSSearchQueryErrorDomain | constant | CSSearchQuery.h | `search_query_error_domain()` |
@@ -42,6 +44,7 @@ No top-level macOS-deprecated declarations were found in the counted symbol set,
 | CSLocalizedString | class | CSSearchableItemAttributeSet.h | `CSLocalizedString::{new,localized_string}` |
 | CSCustomAttributeKey | class | CSSearchableItemAttributeSet.h | `CSCustomAttributeKey::{new,new_with_options,...}` |
 | CSSearchableItemAttributeSet (CSCustomAttributes) | category | CSSearchableItemAttributeSet.h | `CSSearchableItemAttributeSet::{set_custom_value,custom_value}` |
+| NSUserActivity (CSSearchableItemAttributeSet) | category | CSSearchableItemAttributeSet.h | `NSUserActivity::{new,activity_type,content_attribute_set,set_content_attribute_set}` |
 | CSSearchableItemAttributeSet (CSGeneral) | category | CSSearchableItemAttributeSet_General.h | generic field accessors plus `CSSearchableItemAttribute{String,StringArray,Number,URL,Data,Date}Field` and convenience helpers like `set_title` / `set_display_name` |
 | CSSearchableItemAttributeSet (CSActionExtras) | category | CSSearchableItemAttributeSet_General.h | generic number-field accessors for `supportsPhoneCall` / `supportsNavigation` (iOS-only members filtered out) |
 | CSSearchableItemAttributeSet (CSContainment) | category | CSSearchableItemAttributeSet_General.h | generic string/number-field accessors for the containment fields |
@@ -60,15 +63,11 @@ No top-level macOS-deprecated declarations were found in the counted symbol set,
 | CSMailboxTrash | constant | CSSearchableItemAttributeSet_Messaging.h | `mailbox_trash()` |
 | CSMailboxArchive | constant | CSSearchableItemAttributeSet_Messaging.h | `mailbox_archive()` |
 | CSPerson | class | CSPerson.h | `CSPerson::{new,contact_identifier,to_data,...}` and `CSPersonData` |
+| CSImportExtension | class | CSImportExtension.h | `CSImportExtension::{new,simulate_update}` |
 | CSIndexExtensionRequestHandler | class | CSIndexExtensionRequestHandler.h | `CSIndexExtensionRequestHandler::{new,simulate_*}` |
 
 ## 🔴 GAPS
-| Symbol | Kind | Header | Notes |
-| --- | --- | --- | --- |
-| CoreSpotlightVersionString | constant | CoreSpotlight.h | `core_spotlight_version_string()` exists, but the Swift bridge formats `CoreSpotlightVersionNumber` instead of reading `CoreSpotlightVersionString`, so this exported symbol is not actually wrapped. |
-| CSSuggestionHighlightAttributeName | constant | CSSuggestion.h | Highlight ranges are decoded internally for `LocalizedSuggestion`, but the public constant / key itself is not exposed through the Rust API. |
-| NSUserActivity (CSSearchableItemAttributeSet) | category | CSSearchableItemAttributeSet.h | No Rust wrapper for `NSUserActivity.contentAttributeSet`; the crate only exposes `CSSearchableItemAttributeSet` directly. |
-| CSImportExtension | class | CSImportExtension.h | The import-extension request-handler API is not surfaced in `src/` or the Swift bridge. |
+None.
 
 ## ⏭️ EXEMPT
 | Symbol | Kind | Header | Reason | SDK attribute |

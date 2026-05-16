@@ -19,17 +19,18 @@
 )]
 
 pub mod attribute_set;
+mod attribute_set_fields;
 pub mod default_index_extension_request_handler;
 pub mod delegate;
 pub mod error;
 pub mod ffi;
+pub mod import_extension;
 pub mod index;
 pub mod index_extension_request_handler;
 pub mod item;
+mod private;
 pub mod query;
 pub mod settings;
-mod attribute_set_fields;
-mod private;
 
 pub use attribute_set::{
     CSCustomAttributeKey, CSLocalizedString, CSPerson, CSPersonData,
@@ -39,10 +40,12 @@ pub use attribute_set::{
     CSSearchableItemAttributeReadOnlyStringField, CSSearchableItemAttributeSet,
     CSSearchableItemAttributeStringArrayField, CSSearchableItemAttributeStringArrayMapField,
     CSSearchableItemAttributeStringField, CSSearchableItemAttributeURLField, CustomAttributeValue,
+    NSUserActivity,
 };
 pub use default_index_extension_request_handler::DefaultIndexExtensionRequestHandler;
 pub use delegate::{CSSearchableIndexDelegate, CSSearchableIndexDelegateCallbacks};
 pub use error::{CoreSpotlightError, CORESPOTLIGHT_BRIDGE_ERROR_DOMAIN};
+pub use import_extension::CSImportExtension;
 pub use index::CSSearchableIndex;
 pub use index_extension_request_handler::CSIndexExtensionRequestHandler;
 pub use item::CSSearchableItem;
@@ -51,13 +54,13 @@ pub use query::{
 };
 pub use settings::{
     core_spotlight_api_version, core_spotlight_version_number, core_spotlight_version_string,
-    index_error_domain, mailbox_archive, mailbox_drafts, mailbox_inbox, mailbox_junk,
-    mailbox_sent, mailbox_trash, query_continuation_action_type, search_query_error_domain,
-    search_query_string_key, searchable_item_action_type,
-    searchable_item_activity_identifier, CSIndexErrorCode, CSSearchQueryContext,
+    index_error_domain, mailbox_archive, mailbox_drafts, mailbox_inbox, mailbox_junk, mailbox_sent,
+    mailbox_trash, query_continuation_action_type, search_query_error_domain,
+    search_query_string_key, searchable_item_action_type, searchable_item_activity_identifier,
+    suggestion_highlight_attribute_name, CSIndexErrorCode, CSSearchQueryContext,
     CSSearchQueryErrorCode, CSSearchQuerySourceOptions, CSSearchableItemUpdateListenerOptions,
-    CSSuggestion, CSSuggestionKind, CSUserInteraction, CSUserQueryContext,
-    LocalizedSuggestion, LocalizedSuggestionRange,
+    CSSuggestion, CSSuggestionKind, CSUserInteraction, CSUserQueryContext, LocalizedSuggestion,
+    LocalizedSuggestionRange,
 };
 
 /// Common imports.
@@ -69,11 +72,13 @@ pub mod prelude {
         CSSearchableItemAttributePersonArrayField, CSSearchableItemAttributeReadOnlyNumberField,
         CSSearchableItemAttributeReadOnlyStringField, CSSearchableItemAttributeSet,
         CSSearchableItemAttributeStringArrayField, CSSearchableItemAttributeStringArrayMapField,
-        CSSearchableItemAttributeStringField, CSSearchableItemAttributeURLField, CustomAttributeValue,
+        CSSearchableItemAttributeStringField, CSSearchableItemAttributeURLField,
+        CustomAttributeValue, NSUserActivity,
     };
     pub use crate::default_index_extension_request_handler::DefaultIndexExtensionRequestHandler;
     pub use crate::delegate::{CSSearchableIndexDelegate, CSSearchableIndexDelegateCallbacks};
     pub use crate::error::{CoreSpotlightError, CORESPOTLIGHT_BRIDGE_ERROR_DOMAIN};
+    pub use crate::import_extension::CSImportExtension;
     pub use crate::index::CSSearchableIndex;
     pub use crate::index_extension_request_handler::CSIndexExtensionRequestHandler;
     pub use crate::item::CSSearchableItem;
@@ -84,10 +89,10 @@ pub mod prelude {
         core_spotlight_api_version, core_spotlight_version_number, core_spotlight_version_string,
         index_error_domain, mailbox_archive, mailbox_drafts, mailbox_inbox, mailbox_junk,
         mailbox_sent, mailbox_trash, query_continuation_action_type, search_query_error_domain,
-        search_query_string_key, searchable_item_action_type,
-        searchable_item_activity_identifier, CSIndexErrorCode, CSSearchQueryContext,
-        CSSearchQueryErrorCode, CSSearchQuerySourceOptions,
-        CSSearchableItemUpdateListenerOptions, CSSuggestion, CSSuggestionKind,
-        CSUserInteraction, CSUserQueryContext, LocalizedSuggestion, LocalizedSuggestionRange,
+        search_query_string_key, searchable_item_action_type, searchable_item_activity_identifier,
+        suggestion_highlight_attribute_name, CSIndexErrorCode, CSSearchQueryContext,
+        CSSearchQueryErrorCode, CSSearchQuerySourceOptions, CSSearchableItemUpdateListenerOptions,
+        CSSuggestion, CSSuggestionKind, CSUserInteraction, CSUserQueryContext, LocalizedSuggestion,
+        LocalizedSuggestionRange,
     };
 }

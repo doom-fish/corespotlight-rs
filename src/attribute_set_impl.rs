@@ -35,6 +35,7 @@ impl_object_wrapper!(CSSearchableItemAttributeSet);
 impl_object_wrapper!(CSLocalizedString);
 impl_object_wrapper!(CSCustomAttributeKey);
 impl_object_wrapper!(CSPerson);
+impl_object_wrapper!(NSUserActivity);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -77,7 +78,9 @@ impl CustomAttributeValue {
             Self::Number(value) => Ok(CustomAttributePayload::Number(value)),
             Self::Boolean(value) => Ok(CustomAttributePayload::Boolean(value)),
             Self::Bytes(value) => Ok(CustomAttributePayload::Bytes(value)),
-            Self::Date(value) => Ok(CustomAttributePayload::Date(system_time_to_unix_seconds(value)?)),
+            Self::Date(value) => Ok(CustomAttributePayload::Date(system_time_to_unix_seconds(
+                value,
+            )?)),
             Self::Person(value) => Ok(CustomAttributePayload::Person(value)),
             Self::Array(values) => values
                 .into_iter()
@@ -104,12 +107,14 @@ impl CustomAttributeValue {
     }
 }
 
-fn string_getter(
-    object_ptr: *mut core::ffi::c_void,
-    field_name: &str,
-) -> Option<String> {
+fn string_getter(object_ptr: *mut core::ffi::c_void, field_name: &str) -> Option<String> {
     let field_name = cstring_from_str(field_name, "attribute field name").ok()?;
-    unsafe { take_string(ffi::cs_attribute_set_get_string(object_ptr, field_name.as_ptr())) }
+    unsafe {
+        take_string(ffi::cs_attribute_set_get_string(
+            object_ptr,
+            field_name.as_ptr(),
+        ))
+    }
 }
 
 fn set_string_field(
@@ -190,9 +195,8 @@ fn number_getter(
 ) -> Result<Option<f64>, CoreSpotlightError> {
     let field_name = cstring_from_str(field_name, "attribute field name")?;
     let mut value = 0.0;
-    let has_value = unsafe {
-        ffi::cs_attribute_set_get_number(object_ptr, field_name.as_ptr(), &mut value)
-    };
+    let has_value =
+        unsafe { ffi::cs_attribute_set_get_number(object_ptr, field_name.as_ptr(), &mut value) };
     if has_value == 0 {
         return Ok(None);
     }
@@ -226,7 +230,12 @@ fn url_getter(
     field_name: &str,
 ) -> Result<Option<String>, CoreSpotlightError> {
     let field_name = cstring_from_str(field_name, "attribute field name")?;
-    Ok(unsafe { take_string(ffi::cs_attribute_set_get_url(object_ptr, field_name.as_ptr())) })
+    Ok(unsafe {
+        take_string(ffi::cs_attribute_set_get_url(
+            object_ptr,
+            field_name.as_ptr(),
+        ))
+    })
 }
 
 fn set_url_field(
@@ -302,9 +311,8 @@ fn date_getter(
 ) -> Result<Option<SystemTime>, CoreSpotlightError> {
     let field_name = cstring_from_str(field_name, "attribute field name")?;
     let mut value = 0.0;
-    let has_value = unsafe {
-        ffi::cs_attribute_set_get_date(object_ptr, field_name.as_ptr(), &mut value)
-    };
+    let has_value =
+        unsafe { ffi::cs_attribute_set_get_date(object_ptr, field_name.as_ptr(), &mut value) };
     if has_value == 0 {
         return Ok(None);
     }
@@ -583,7 +591,10 @@ impl CSSearchableItemAttributeSet {
         set_data_field(self.as_ptr(), field.as_str(), value, field.as_str())
     }
 
-    pub fn date(&self, field: AttributeDateField) -> Result<Option<SystemTime>, CoreSpotlightError> {
+    pub fn date(
+        &self,
+        field: AttributeDateField,
+    ) -> Result<Option<SystemTime>, CoreSpotlightError> {
         date_getter(self.as_ptr(), field.as_str())
     }
 
@@ -717,7 +728,8 @@ impl CSSearchableItemAttributeSet {
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
-        let payload: CustomAttributePayload = unsafe { parse_json_ptr(out_json, "custom attribute")? };
+        let payload: CustomAttributePayload =
+            unsafe { parse_json_ptr(out_json, "custom attribute")? };
         Ok(CustomAttributeValue::from_payload(payload))
     }
 
@@ -741,10 +753,7 @@ impl CSSearchableItemAttributeSet {
         self.string(AttributeStringField::ContentDescription)
     }
 
-    pub fn set_content_description(
-        &self,
-        value: Option<&str>,
-    ) -> Result<(), CoreSpotlightError> {
+    pub fn set_content_description(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_string(AttributeStringField::ContentDescription, value)
     }
 
@@ -818,9 +827,7 @@ impl CSSearchableItemAttributeSet {
 }
 
 impl CSLocalizedString {
-    pub fn new(
-        localized_strings: &BTreeMap<String, String>,
-    ) -> Result<Self, CoreSpotlightError> {
+    pub fn new(localized_strings: &BTreeMap<String, String>) -> Result<Self, CoreSpotlightError> {
         let localized_strings_json = json_cstring(localized_strings, "localized strings")?;
         let mut out_value = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -944,7 +951,8 @@ impl CSPerson {
     pub fn handles(&self) -> Result<Vec<String>, CoreSpotlightError> {
         let mut out_json = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
-        let status = unsafe { ffi::cs_person_get_handles(self.as_ptr(), &mut out_json, &mut out_error) };
+        let status =
+            unsafe { ffi::cs_person_get_handles(self.as_ptr(), &mut out_json, &mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -982,5 +990,54 @@ impl CSPerson {
             handle_identifier: self.handle_identifier().unwrap_or_default(),
             contact_identifier: self.contact_identifier(),
         })
+    }
+}
+
+impl NSUserActivity {
+    pub fn new(activity_type: impl AsRef<str>) -> Result<Self, CoreSpotlightError> {
+        let activity_type = cstring_from_str(activity_type.as_ref(), "user activity type")?;
+        let mut out_activity = core::ptr::null_mut();
+        let mut out_error = core::ptr::null_mut();
+        let status = unsafe {
+            ffi::cs_user_activity_new(activity_type.as_ptr(), &mut out_activity, &mut out_error)
+        };
+        if status != ffi::status::OK {
+            return Err(unsafe { error_from_status(status, out_error) });
+        }
+        unsafe { Self::from_retained_ptr(out_activity, "user activity") }
+    }
+
+    pub fn activity_type(&self) -> Option<String> {
+        unsafe { take_string(ffi::cs_user_activity_get_activity_type(self.as_ptr())) }
+    }
+
+    pub fn content_attribute_set(&self) -> Option<CSSearchableItemAttributeSet> {
+        let attribute_set =
+            unsafe { ffi::cs_user_activity_get_content_attribute_set(self.as_ptr()) };
+        unsafe {
+            CSSearchableItemAttributeSet::from_retained_ptr(
+                attribute_set,
+                "user activity content attribute set",
+            )
+            .ok()
+        }
+    }
+
+    pub fn set_content_attribute_set(
+        &self,
+        value: Option<&CSSearchableItemAttributeSet>,
+    ) -> Result<(), CoreSpotlightError> {
+        let mut out_error = core::ptr::null_mut();
+        let status = unsafe {
+            ffi::cs_user_activity_set_content_attribute_set(
+                self.as_ptr(),
+                value.map_or(core::ptr::null_mut(), CSSearchableItemAttributeSet::as_ptr),
+                &mut out_error,
+            )
+        };
+        if status != ffi::status::OK {
+            return Err(unsafe { error_from_status(status, out_error) });
+        }
+        Ok(())
     }
 }

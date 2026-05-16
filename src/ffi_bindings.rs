@@ -2,11 +2,8 @@ use core::ffi::{c_char, c_void};
 
 pub type CsDelegateReleaseContext = unsafe extern "C" fn(context: *mut c_void);
 pub type CsDelegateReindexAll = unsafe extern "C" fn(context: *mut c_void, index: *mut c_void);
-pub type CsDelegateReindexIdentifiers = unsafe extern "C" fn(
-    context: *mut c_void,
-    index: *mut c_void,
-    identifiers_json: *const c_char,
-);
+pub type CsDelegateReindexIdentifiers =
+    unsafe extern "C" fn(context: *mut c_void, index: *mut c_void, identifiers_json: *const c_char);
 pub type CsDelegateNotification = unsafe extern "C" fn(context: *mut c_void, index: *mut c_void);
 pub type CsDelegateDataForItem = unsafe extern "C" fn(
     context: *mut c_void,
@@ -31,10 +28,14 @@ pub type CsDelegateSearchableItemsForIdentifiers = unsafe extern "C" fn(
     out_json: *mut *mut c_char,
     out_error: *mut *mut c_char,
 ) -> i32;
-pub type CsDelegateSearchableItemsDidUpdate = unsafe extern "C" fn(
+pub type CsDelegateSearchableItemsDidUpdate =
+    unsafe extern "C" fn(context: *mut c_void, items_json: *const c_char);
+pub type CsImportExtensionUpdate = unsafe extern "C" fn(
     context: *mut c_void,
-    items_json: *const c_char,
-);
+    attributes: *mut c_void,
+    content_url: *const c_char,
+    out_error: *mut *mut c_char,
+) -> i32;
 
 extern "C" {
     pub fn cs_string_free(s: *mut c_char);
@@ -85,10 +86,7 @@ extern "C" {
         timeout_seconds: i32,
         out_error: *mut *mut c_char,
     ) -> i32;
-    pub fn cs_searchable_index_begin_batch(
-        index: *mut c_void,
-        out_error: *mut *mut c_char,
-    ) -> i32;
+    pub fn cs_searchable_index_begin_batch(index: *mut c_void, out_error: *mut *mut c_char) -> i32;
     pub fn cs_searchable_index_end_batch_with_client_state(
         index: *mut c_void,
         client_state_json: *const c_char,
@@ -304,6 +302,19 @@ extern "C" {
         out_error: *mut *mut c_char,
     ) -> i32;
 
+    pub fn cs_user_activity_new(
+        activity_type: *const c_char,
+        out_activity: *mut *mut c_void,
+        out_error: *mut *mut c_char,
+    ) -> i32;
+    pub fn cs_user_activity_get_activity_type(activity: *mut c_void) -> *mut c_char;
+    pub fn cs_user_activity_get_content_attribute_set(activity: *mut c_void) -> *mut c_void;
+    pub fn cs_user_activity_set_content_attribute_set(
+        activity: *mut c_void,
+        attribute_set: *mut c_void,
+        out_error: *mut *mut c_char,
+    ) -> i32;
+
     pub fn cs_localized_string_new(
         localized_strings_json: *const c_char,
         out_value: *mut *mut c_void,
@@ -361,6 +372,7 @@ extern "C" {
     pub fn cs_searchable_item_activity_identifier() -> *mut c_char;
     pub fn cs_query_continuation_action_type() -> *mut c_char;
     pub fn cs_search_query_string_key() -> *mut c_char;
+    pub fn cs_suggestion_highlight_attribute_name() -> *mut c_char;
     pub fn cs_mailbox_inbox() -> *mut c_char;
     pub fn cs_mailbox_drafts() -> *mut c_char;
     pub fn cs_mailbox_sent() -> *mut c_char;
@@ -591,6 +603,20 @@ extern "C" {
         searchable_items_for_identifiers: Option<CsDelegateSearchableItemsForIdentifiers>,
         searchable_items_did_update: Option<CsDelegateSearchableItemsDidUpdate>,
         out_handler: *mut *mut c_void,
+        out_error: *mut *mut c_char,
+    ) -> i32;
+
+    pub fn cs_import_extension_new(
+        context: *mut c_void,
+        release_context: Option<CsDelegateReleaseContext>,
+        update: Option<CsImportExtensionUpdate>,
+        out_extension: *mut *mut c_void,
+        out_error: *mut *mut c_char,
+    ) -> i32;
+    pub fn cs_import_extension_simulate_update(
+        extension: *mut c_void,
+        attributes: *mut c_void,
+        content_url: *const c_char,
         out_error: *mut *mut c_char,
     ) -> i32;
 

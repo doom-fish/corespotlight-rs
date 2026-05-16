@@ -5,8 +5,8 @@ use serde::Deserialize;
 use crate::error::CoreSpotlightError;
 use crate::ffi;
 use crate::private::{
-    error_from_status, impl_object_wrapper, json_cstring, optional_cstring_from_str,
-    opt_cstring_ptr, parse_json_ptr, take_string,
+    error_from_status, impl_object_wrapper, json_cstring, opt_cstring_ptr,
+    optional_cstring_from_str, parse_json_ptr, take_string,
 };
 
 impl_object_wrapper!(CSSearchQueryContext);
@@ -241,7 +241,10 @@ pub fn core_spotlight_version_number() -> f64 {
 }
 
 pub fn core_spotlight_version_string() -> Result<String, CoreSpotlightError> {
-    get_required_string(ffi::cs_core_spotlight_version_string, "CoreSpotlight version string")
+    get_required_string(
+        ffi::cs_core_spotlight_version_string,
+        "CoreSpotlight version string",
+    )
 }
 
 pub fn core_spotlight_api_version() -> i32 {
@@ -249,7 +252,10 @@ pub fn core_spotlight_api_version() -> i32 {
 }
 
 pub fn index_error_domain() -> Result<String, CoreSpotlightError> {
-    get_required_string(ffi::cs_index_error_domain, "CoreSpotlight index error domain")
+    get_required_string(
+        ffi::cs_index_error_domain,
+        "CoreSpotlight index error domain",
+    )
 }
 
 pub fn search_query_error_domain() -> Result<String, CoreSpotlightError> {
@@ -282,6 +288,13 @@ pub fn query_continuation_action_type() -> Result<String, CoreSpotlightError> {
 
 pub fn search_query_string_key() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_search_query_string_key, "CSSearchQueryString")
+}
+
+pub fn suggestion_highlight_attribute_name() -> Result<String, CoreSpotlightError> {
+    get_required_string(
+        ffi::cs_suggestion_highlight_attribute_name,
+        "CSSuggestionHighlightAttributeName",
+    )
 }
 
 pub fn mailbox_inbox() -> Result<String, CoreSpotlightError> {
@@ -364,7 +377,10 @@ impl CSSearchQueryContext {
     }
 
     pub fn keyboard_language(&self) -> Option<String> {
-        get_optional_string(self.as_ptr(), ffi::cs_search_query_context_get_keyboard_language)
+        get_optional_string(
+            self.as_ptr(),
+            ffi::cs_search_query_context_get_keyboard_language,
+        )
     }
 
     pub fn set_keyboard_language(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
@@ -520,7 +536,9 @@ impl CSUserQueryContext {
 }
 
 impl CSSuggestion {
-    pub fn localized_attributed_suggestion(&self) -> Result<LocalizedSuggestion, CoreSpotlightError> {
+    pub fn localized_attributed_suggestion(
+        &self,
+    ) -> Result<LocalizedSuggestion, CoreSpotlightError> {
         let mut out_json = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
@@ -533,9 +551,8 @@ impl CSSuggestion {
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
-        let payload: LocalizedSuggestionPayload = unsafe {
-            parse_json_ptr(out_json, "localized attributed suggestion")?
-        };
+        let payload: LocalizedSuggestionPayload =
+            unsafe { parse_json_ptr(out_json, "localized attributed suggestion")? };
         Ok(LocalizedSuggestion {
             string: payload.string,
             highlighted_ranges: payload.highlighted_ranges,

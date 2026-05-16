@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 - 2026-05-16
+
+- Fixed `core_spotlight_version_string()` to read the exported `CoreSpotlightVersionString` symbol.
+- Added `suggestion_highlight_attribute_name()`, `NSUserActivity`, and `CSImportExtension` coverage with runnable example/test support.
+- Closed the remaining `COVERAGE_AUDIT.md` gaps, bringing the audited top-level Core Spotlight surface to 100% coverage.
+
 ## 0.2.0 - 2026-05-16
 
 - Expanded `CSSearchableIndex` with batching, client-state helpers, external-provider fetch, and delegate / request-handler attachment.

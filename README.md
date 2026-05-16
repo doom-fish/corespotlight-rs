@@ -2,7 +2,7 @@
 
 Safe Rust bindings for Apple's [Core Spotlight](https://developer.apple.com/documentation/corespotlight) framework on macOS.
 
-> **Status:** v0.2.0 expands coverage across searchable indexes, searchable items, attribute sets, query/settings APIs, index delegates, and index-extension handlers. See [COVERAGE.md](COVERAGE.md) for the current SDK matrix and known caveats.
+> **Status:** v0.2.1 closes the remaining audit gaps with the real Core Spotlight version string, the suggestion-highlight key, `NSUserActivity.contentAttributeSet`, and `CSImportExtension` support. See [COVERAGE.md](COVERAGE.md) for the current SDK matrix and known caveats.
 
 ## Quick start
 
@@ -32,9 +32,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 - `CSSearchableIndex` creation, deletion, batching, client-state fetch, external-provider fetch, and delegate / request-handler attachment
 - `CSSearchableItem` rank comparison, mutable identifiers, expiration dates, update flags, and update-listener options
-- `CSSearchableItemAttributeSet` generic typed field enums for strings, arrays, numbers, URLs, data, dates, people, and maps, plus convenience helpers for common fields
-- `CSSearchQuery`, `CSUserQuery`, `CSSearchQueryContext`, `CSUserQueryContext`, `CSSuggestion`, Core Spotlight version metadata, error domains, and mailbox/action constants
-- Simulatable `CSSearchableIndexDelegate`, `CSIndexExtensionRequestHandler`, and `DefaultIndexExtensionRequestHandler` flows for integration tests and examples
+- `CSSearchableItemAttributeSet` generic typed field enums for strings, arrays, numbers, URLs, data, dates, people, and maps, plus convenience helpers for common fields and `NSUserActivity.contentAttributeSet`
+- `CSSearchQuery`, `CSUserQuery`, `CSSearchQueryContext`, `CSUserQueryContext`, `CSSuggestion`, Core Spotlight version metadata, error domains, suggestion/action keys, and mailbox constants
+- Simulatable `CSSearchableIndexDelegate`, `CSIndexExtensionRequestHandler`, `CSImportExtension`, and `DefaultIndexExtensionRequestHandler` flows for integration tests and examples
 
 ## Examples
 
@@ -45,6 +45,7 @@ cargo run --example 03_query_settings
 cargo run --example 04_delegate_simulation
 cargo run --example 05_index_extension_request_handler
 cargo run --example 06_default_index_extension_request_handler
+cargo run --example 07_user_activity_import_extension
 ```
 
 ## Notes

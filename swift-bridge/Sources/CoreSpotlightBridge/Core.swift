@@ -1,5 +1,6 @@
 import CoreSpotlight
 import Foundation
+import UniformTypeIdentifiers
 
 let CSR_OK: Int32 = 0
 let CSR_INVALID_ARGUMENT: Int32 = -1
@@ -23,7 +24,8 @@ public func csRetainObject(_ ptr: UnsafeMutableRawPointer?) -> UnsafeMutableRawP
     guard let ptr else {
         return nil
     }
-    let object = Unmanaged<AnyObject>.fromOpaque(ptr).takeUnretainedValue()
+    let typedPointer = ptr.assumingMemoryBound(to: AnyObject.self)
+    let object = Unmanaged<AnyObject>.fromOpaque(UnsafeRawPointer(typedPointer)).takeUnretainedValue()
     return Unmanaged.passRetained(object).toOpaque()
 }
 
@@ -32,7 +34,8 @@ public func csReleaseObject(_ ptr: UnsafeMutableRawPointer?) {
     guard let ptr else {
         return
     }
-    Unmanaged<AnyObject>.fromOpaque(ptr).release()
+    let typedPointer = ptr.assumingMemoryBound(to: AnyObject.self)
+    Unmanaged<AnyObject>.fromOpaque(UnsafeRawPointer(typedPointer)).release()
 }
 
 @inline(__always)
@@ -47,7 +50,14 @@ func csRetain(_ object: some AnyObject) -> UnsafeMutableRawPointer {
 
 @inline(__always)
 func csBorrow<T: AnyObject>(_ ptr: UnsafeMutableRawPointer) -> T {
-    Unmanaged<T>.fromOpaque(ptr).takeUnretainedValue()
+    let typedPointer = ptr.assumingMemoryBound(to: T.self)
+    return Unmanaged<T>.fromOpaque(UnsafeRawPointer(typedPointer)).takeUnretainedValue()
+}
+
+@inline(__always)
+func csBorrowAny(_ ptr: UnsafeMutableRawPointer) -> AnyObject {
+    let typedPointer = ptr.assumingMemoryBound(to: AnyObject.self)
+    return Unmanaged<AnyObject>.fromOpaque(UnsafeRawPointer(typedPointer)).takeUnretainedValue()
 }
 
 @inline(__always)
@@ -101,4 +111,34 @@ func csAwaitCompletion(
     if let completionError {
         throw completionError
     }
+}
+
+func csUTType(from identifier: String) -> UTType {
+    UTType(importedAs: identifier)
+}
+
+func csOptionalUTType(from value: UnsafePointer<CChar>?) -> UTType? {
+    guard let value else {
+        return nil
+    }
+    return csUTType(from: String(cString: value))
+}
+
+func csProtectionClass(from value: UnsafePointer<CChar>?) -> FileProtectionType? {
+    guard let value else {
+        return nil
+    }
+    return FileProtectionType(rawValue: String(cString: value))
+}
+
+func csNSError(fromJSONCString ptr: UnsafeMutablePointer<CChar>?) -> NSError {
+    guard let ptr else {
+        return csBridgeNSError(code: CSR_FAILURE, message: "Missing callback error payload")
+    }
+    defer { csStringFree(ptr) }
+    let json = String(cString: ptr)
+    guard let data = json.data(using: .utf8), let payload = try? JSONDecoder().decode(CSErrorPayload.self, from: data) else {
+        return csBridgeNSError(code: CSR_FAILURE, message: json)
+    }
+    return NSError(domain: payload.domain, code: payload.code, userInfo: [NSLocalizedDescriptionKey: payload.message])
 }

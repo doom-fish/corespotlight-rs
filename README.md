@@ -2,7 +2,7 @@
 
 Safe Rust bindings for Apple's [Core Spotlight](https://developer.apple.com/documentation/corespotlight) framework on macOS.
 
-> **Status:** v0.1.0 covers searchable indexes, searchable items, attribute sets, and the most common metadata fields needed to index and delete app content from Spotlight.
+> **Status:** v0.2.0 expands coverage across searchable indexes, searchable items, attribute sets, query/settings APIs, index delegates, and index-extension handlers. See [COVERAGE.md](COVERAGE.md) for the current SDK matrix and known caveats.
 
 ## Quick start
 
@@ -30,21 +30,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Highlights
 
-- `CSSearchableIndex::default_searchable_index` and `CSSearchableIndex::new`
-- `index_searchable_items`, `delete_searchable_items_with_identifiers`, `delete_searchable_items_with_domain_identifiers`, and `delete_all_searchable_items`
-- `CSSearchableItem` construction plus expiration-date accessors
-- `CSSearchableItemAttributeSet` setters/getters for content type, title, content description, display name, keywords, thumbnails, content URLs, coordinates, and rating
-- Completion-handler APIs bridged to synchronous Rust with a `DispatchSemaphore`
+- `CSSearchableIndex` creation, deletion, batching, client-state fetch, external-provider fetch, and delegate / request-handler attachment
+- `CSSearchableItem` rank comparison, mutable identifiers, expiration dates, update flags, and update-listener options
+- `CSSearchableItemAttributeSet` generic typed field enums for strings, arrays, numbers, URLs, data, dates, people, and maps, plus convenience helpers for common fields
+- `CSSearchQuery`, `CSUserQuery`, `CSSearchQueryContext`, `CSUserQueryContext`, `CSSuggestion`, Core Spotlight version metadata, error domains, and mailbox/action constants
+- Simulatable `CSSearchableIndexDelegate`, `CSIndexExtensionRequestHandler`, and `DefaultIndexExtensionRequestHandler` flows for integration tests and examples
 
-## Smoke example
-
-Run the Spotlight smoke test with:
+## Examples
 
 ```bash
-cargo run --all-features --example 01_index_smoke
+cargo run --example 01_index_smoke
+cargo run --example 02_attribute_fields
+cargo run --example 03_query_settings
+cargo run --example 04_delegate_simulation
+cargo run --example 05_index_extension_request_handler
+cargo run --example 06_default_index_extension_request_handler
 ```
 
-It indexes one item titled `doom-fish corespotlight smoke`, deletes it by identifier, and prints `✅ corespotlight index + delete OK`.
+## Notes
+
+- `CSCustomAttributeKey` is exposed, but Apple validates custom key names against the current bundle identifier at runtime; command-line examples may not always be able to create them.
+- `CSUserQuery::user_engaged_with_item` and `CSUserQuery::user_engaged_with_suggestion` currently return a bridge error on the command-line bridge because Apple’s Swift overlay uses opaque wrapper types that are not yet surfaced to Rust.
+- `CSSearchableIndex::end_index_batch_with_expected_client_state` currently rejects non-`None` expected state values on the current SDK bridge; the limitation is documented in [COVERAGE.md](COVERAGE.md).
 
 ## License
 

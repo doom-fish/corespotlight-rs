@@ -1,0 +1,3 @@
+#ifndef CORESPOTLIGHT_BRIDGE_H
+#define CORESPOTLIGHT_BRIDGE_H
+#endif

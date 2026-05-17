@@ -32,6 +32,9 @@ mod private;
 pub mod query;
 pub mod settings;
 
+#[cfg(feature = "async")]
+pub mod async_api;
+
 pub use attribute_set::{
     CSCustomAttributeKey, CSLocalizedString, CSPerson, CSPersonData,
     CSSearchableItemAttributeDataField, CSSearchableItemAttributeDateArrayField,

@@ -641,4 +641,37 @@ extern "C" {
         out_json: *mut *mut c_char,
         out_error: *mut *mut c_char,
     ) -> i32;
+
+    // Async APIs (feature-gated in Rust)
+    pub fn corespotlight_index_searchable_items_async(
+        index: *mut c_void,
+        items_json: *const c_char,
+        timeout_seconds: i32,
+        cb: extern "C" fn(*const c_void, *const c_char, *mut c_void),
+        ctx: *mut c_void,
+    );
+    pub fn corespotlight_delete_searchable_items_with_identifiers_async(
+        index: *mut c_void,
+        identifiers_json: *const c_char,
+        timeout_seconds: i32,
+        cb: extern "C" fn(*const c_void, *const c_char, *mut c_void),
+        ctx: *mut c_void,
+    );
+    pub fn corespotlight_delete_searchable_items_with_domain_identifiers_async(
+        index: *mut c_void,
+        domain_identifiers_json: *const c_char,
+        timeout_seconds: i32,
+        cb: extern "C" fn(*const c_void, *const c_char, *mut c_void),
+        ctx: *mut c_void,
+    );
+    pub fn corespotlight_delete_all_searchable_items_async(
+        index: *mut c_void,
+        cb: extern "C" fn(*const c_void, *const c_char, *mut c_void),
+        ctx: *mut c_void,
+    );
+    pub fn corespotlight_fetch_last_client_state_async(
+        index: *mut c_void,
+        cb: extern "C" fn(*const c_void, *const c_char, *mut c_void),
+        ctx: *mut c_void,
+    );
 }

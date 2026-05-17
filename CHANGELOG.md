@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 - 2026-05-17
+
+- Added `async` feature gate with async API module (`async_api`).
+- Implemented async wrappers for all completion-handler APIs:
+  - `AsyncCSSearchableIndex::index_searchable_items` — async indexing
+  - `AsyncCSSearchableIndex::delete_searchable_items_with_identifiers` — async deletion by ID
+  - `AsyncCSSearchableIndex::delete_searchable_items_with_domain_identifiers` — async deletion by domain
+  - `AsyncCSSearchableIndex::delete_all_searchable_items` — async deletion of all items
+  - `AsyncCSSearchableIndex::fetch_last_client_state` — async state fetch (macOS 13+)
+- All async APIs are executor-agnostic and work with any async runtime.
+
 ## 0.2.1 - 2026-05-16
 
 - Fixed `core_spotlight_version_string()` to read the exported `CoreSpotlightVersionString` symbol.

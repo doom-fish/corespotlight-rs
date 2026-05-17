@@ -2,7 +2,7 @@
 
 Safe Rust bindings for Apple's [Core Spotlight](https://developer.apple.com/documentation/corespotlight) framework on macOS.
 
-> **Status:** v0.2.1 closes the remaining audit gaps with the real Core Spotlight version string, the suggestion-highlight key, `NSUserActivity.contentAttributeSet`, and `CSImportExtension` support. See [COVERAGE.md](COVERAGE.md) for the current SDK matrix and known caveats.
+> **Status:** v0.3.0 adds a complete async API module with executor-agnostic futures for all completion-handler operations. See [COVERAGE.md](COVERAGE.md) for the current SDK matrix and known caveats.
 
 ## Quick start
 
@@ -35,6 +35,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 - `CSSearchableItemAttributeSet` generic typed field enums for strings, arrays, numbers, URLs, data, dates, people, and maps, plus convenience helpers for common fields and `NSUserActivity.contentAttributeSet`
 - `CSSearchQuery`, `CSUserQuery`, `CSSearchQueryContext`, `CSUserQueryContext`, `CSSuggestion`, Core Spotlight version metadata, error domains, suggestion/action keys, and mailbox constants
 - Simulatable `CSSearchableIndexDelegate`, `CSIndexExtensionRequestHandler`, `CSImportExtension`, and `DefaultIndexExtensionRequestHandler` flows for integration tests and examples
+
+## Async API
+
+When the `async` feature is enabled, the [`async_api`](src/async_api.rs) module provides executor-agnostic futures for all completion-handler operations:
+
+```rust,ignore
+use corespotlight::async_api::AsyncCSSearchableIndex;
+use corespotlight::CSSearchableIndex;
+
+let index = CSSearchableIndex::default_searchable_index()?;
+let items = vec![]; // Create your items
+AsyncCSSearchableIndex::index_searchable_items(&index, &items).await?;
+```
+
+Available async operations:
+- `AsyncCSSearchableIndex::index_searchable_items` — Index items asynchronously
+- `AsyncCSSearchableIndex::delete_searchable_items_with_identifiers` — Delete items by identifier
+- `AsyncCSSearchableIndex::delete_searchable_items_with_domain_identifiers` — Delete items by domain
+- `AsyncCSSearchableIndex::delete_all_searchable_items` — Delete all items
+- `AsyncCSSearchableIndex::fetch_last_client_state` — Fetch last client state (macOS 13+)
+
+Enable with `cargo build --features async` or add to `Cargo.toml`:
+```toml
+corespotlight = { version = "0.3", features = ["async"] }
+```
 
 ## Examples
 

@@ -63,6 +63,7 @@ use crate::error::CoreSpotlightError;
 use crate::index::CSSearchableIndex;
 use crate::item::CSSearchableItem;
 use doom_fish_utils::completion::{error_from_cstr, AsyncCompletion, AsyncCompletionFuture};
+use doom_fish_utils::panic_safe::catch_user_panic;
 use std::ffi::c_void;
 use std::future::Future;
 use std::pin::Pin;
@@ -78,15 +79,26 @@ extern "C" fn index_searchable_items_cb(
     error: *const i8,
     user_data: *mut c_void,
 ) {
-    if error.is_null() {
-        unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
-    } else {
-        let error_msg = unsafe { error_from_cstr(error) };
-        unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
-    }
+    catch_user_panic("index_searchable_items_cb", || {
+        if error.is_null() {
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
+        } else {
+            // SAFETY: error is a valid C string pointer or null
+            let error_msg = unsafe { error_from_cstr(error) };
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
+        }
+    });
 }
 
 /// Future for async index_searchable_items
+///
+/// # Thread Safety
+///
+/// This future is `Send + Sync` because it wraps `AsyncCompletionFuture<()>` which uses
+/// `Arc<Mutex<_>>` for synchronization. The future can be safely moved between threads
+/// and shared across threads.
 pub struct IndexSearchableItemsFuture {
     inner: AsyncCompletionFuture<()>,
 }
@@ -118,12 +130,17 @@ extern "C" fn delete_searchable_items_with_identifiers_cb(
     error: *const i8,
     user_data: *mut c_void,
 ) {
-    if error.is_null() {
-        unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
-    } else {
-        let error_msg = unsafe { error_from_cstr(error) };
-        unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
-    }
+    catch_user_panic("delete_searchable_items_with_identifiers_cb", || {
+        if error.is_null() {
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
+        } else {
+            // SAFETY: error is a valid C string pointer or null
+            let error_msg = unsafe { error_from_cstr(error) };
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
+        }
+    });
 }
 
 /// Future for async delete_searchable_items_with_identifiers
@@ -158,12 +175,17 @@ extern "C" fn delete_searchable_items_with_domain_identifiers_cb(
     error: *const i8,
     user_data: *mut c_void,
 ) {
-    if error.is_null() {
-        unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
-    } else {
-        let error_msg = unsafe { error_from_cstr(error) };
-        unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
-    }
+    catch_user_panic("delete_searchable_items_with_domain_identifiers_cb", || {
+        if error.is_null() {
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
+        } else {
+            // SAFETY: error is a valid C string pointer or null
+            let error_msg = unsafe { error_from_cstr(error) };
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
+        }
+    });
 }
 
 /// Future for async delete_searchable_items_with_domain_identifiers
@@ -198,12 +220,17 @@ extern "C" fn delete_all_searchable_items_cb(
     error: *const i8,
     user_data: *mut c_void,
 ) {
-    if error.is_null() {
-        unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
-    } else {
-        let error_msg = unsafe { error_from_cstr(error) };
-        unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
-    }
+    catch_user_panic("delete_all_searchable_items_cb", || {
+        if error.is_null() {
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_ok(user_data, ()) };
+        } else {
+            // SAFETY: error is a valid C string pointer or null
+            let error_msg = unsafe { error_from_cstr(error) };
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<()>::complete_err(user_data, error_msg) };
+        }
+    });
 }
 
 /// Future for async delete_all_searchable_items
@@ -238,36 +265,44 @@ extern "C" fn fetch_last_client_state_cb(
     error: *const i8,
     user_data: *mut c_void,
 ) {
-    if error.is_null() {
-        if result.is_null() {
-            unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, "Unknown error".into()) };
+    catch_user_panic("fetch_last_client_state_cb", || {
+        if error.is_null() {
+            if result.is_null() {
+                // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+                unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, "Unknown error".into()) };
+            } else {
+                // SAFETY: result is a valid C string pointer
+                let result_ptr = result.cast::<i8>();
+                let json_str = unsafe { std::ffi::CStr::from_ptr(result_ptr) }
+                    .to_string_lossy()
+                    .to_string();
+                
+                // Parse JSON to get the Vec<u8>
+                match serde_json::from_str::<Vec<u8>>(&json_str) {
+                    Ok(data) => {
+                        // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+                        unsafe { AsyncCompletion::complete_ok(user_data, data) };
+                    }
+                    Err(e) => {
+                        let err_msg = format!("Failed to parse client state JSON: {e}");
+                        // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+                        unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, err_msg) };
+                    }
+                }
+                
+                // Free the C string
+                // SAFETY: result_ptr is a valid C string pointer from the Swift callback
+                if !result_ptr.is_null() {
+                    unsafe { crate::ffi::cs_string_free(result_ptr.cast_mut()) };
+                }
+            }
         } else {
-            // Result is a C string (JSON) that we need to parse
-            let result_ptr = result.cast::<i8>();
-            let json_str = unsafe { std::ffi::CStr::from_ptr(result_ptr) }
-                .to_string_lossy()
-                .to_string();
-            
-            // Parse JSON to get the Vec<u8>
-            match serde_json::from_str::<Vec<u8>>(&json_str) {
-                Ok(data) => {
-                    unsafe { AsyncCompletion::complete_ok(user_data, data) };
-                }
-                Err(e) => {
-                    let err_msg = format!("Failed to parse client state JSON: {e}");
-                    unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, err_msg) };
-                }
-            }
-            
-            // Free the C string
-            if !result_ptr.is_null() {
-                unsafe { crate::ffi::cs_string_free(result_ptr.cast_mut()) };
-            }
+            // SAFETY: error is a valid C string pointer or null
+            let error_msg = unsafe { error_from_cstr(error) };
+            // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
+            unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, error_msg) };
         }
-    } else {
-        let error_msg = unsafe { error_from_cstr(error) };
-        unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, error_msg) };
-    }
+    });
 }
 
 /// Future for async fetch_last_client_state
@@ -322,6 +357,7 @@ impl AsyncCSSearchableIndex {
             Ok(json) => json,
             Err(e) => {
                 let err_msg = format!("Failed to serialize items: {e}");
+                // SAFETY: ctx is a valid AsyncCompletion context pointer from AsyncCompletion::create()
                 unsafe {
                     AsyncCompletion::<()>::complete_err(ctx, err_msg);
                 }
@@ -333,6 +369,7 @@ impl AsyncCSSearchableIndex {
             Ok(cstr) => cstr,
             Err(e) => {
                 let err_msg = format!("Failed to create C string: {e}");
+                // SAFETY: ctx is a valid AsyncCompletion context pointer from AsyncCompletion::create()
                 unsafe {
                     AsyncCompletion::<()>::complete_err(ctx, err_msg);
                 }
@@ -340,6 +377,8 @@ impl AsyncCSSearchableIndex {
             }
         };
 
+        // SAFETY: index.as_ptr() is a valid CoreSpotlight index pointer, items_cstr.as_ptr() is a valid C string,
+        // and index_searchable_items_cb is a valid callback function that will be called exactly once with ctx as user_data
         unsafe {
             crate::ffi::corespotlight_index_searchable_items_async(
                 index.as_ptr(),
@@ -350,6 +389,7 @@ impl AsyncCSSearchableIndex {
             );
         }
 
+        // Leak the CString into the callback; it will be freed by the Swift side
         std::mem::forget(items_cstr);
         IndexSearchableItemsFuture { inner: future }
     }
@@ -373,6 +413,7 @@ impl AsyncCSSearchableIndex {
             Ok(json) => json,
             Err(e) => {
                 let err_msg = format!("Failed to serialize identifiers: {e}");
+                // SAFETY: ctx is a valid AsyncCompletion context pointer from AsyncCompletion::create()
                 unsafe {
                     AsyncCompletion::<()>::complete_err(ctx, err_msg);
                 }
@@ -384,6 +425,7 @@ impl AsyncCSSearchableIndex {
             Ok(cstr) => cstr,
             Err(e) => {
                 let err_msg = format!("Failed to create C string: {e}");
+                // SAFETY: ctx is a valid AsyncCompletion context pointer from AsyncCompletion::create()
                 unsafe {
                     AsyncCompletion::<()>::complete_err(ctx, err_msg);
                 }
@@ -391,6 +433,8 @@ impl AsyncCSSearchableIndex {
             }
         };
 
+        // SAFETY: index.as_ptr() is a valid CoreSpotlight index pointer, identifiers_cstr.as_ptr() is a valid C string,
+        // and delete_searchable_items_with_identifiers_cb is a valid callback function that will be called exactly once with ctx as user_data
         unsafe {
             crate::ffi::corespotlight_delete_searchable_items_with_identifiers_async(
                 index.as_ptr(),
@@ -401,6 +445,7 @@ impl AsyncCSSearchableIndex {
             );
         }
 
+        // Leak the CString into the callback; it will be freed by the Swift side
         std::mem::forget(identifiers_cstr);
         DeleteSearchableItemsWithIdentifiersFuture { inner: future }
     }
@@ -425,6 +470,7 @@ impl AsyncCSSearchableIndex {
             Ok(json) => json,
             Err(e) => {
                 let err_msg = format!("Failed to serialize domain identifiers: {e}");
+                // SAFETY: ctx is a valid AsyncCompletion context pointer from AsyncCompletion::create()
                 unsafe {
                     AsyncCompletion::<()>::complete_err(ctx, err_msg);
                 }
@@ -436,6 +482,7 @@ impl AsyncCSSearchableIndex {
             Ok(cstr) => cstr,
             Err(e) => {
                 let err_msg = format!("Failed to create C string: {e}");
+                // SAFETY: ctx is a valid AsyncCompletion context pointer from AsyncCompletion::create()
                 unsafe {
                     AsyncCompletion::<()>::complete_err(ctx, err_msg);
                 }
@@ -443,6 +490,8 @@ impl AsyncCSSearchableIndex {
             }
         };
 
+        // SAFETY: index.as_ptr() is a valid CoreSpotlight index pointer, domain_identifiers_cstr.as_ptr() is a valid C string,
+        // and delete_searchable_items_with_domain_identifiers_cb is a valid callback function that will be called exactly once with ctx as user_data
         unsafe {
             crate::ffi::corespotlight_delete_searchable_items_with_domain_identifiers_async(
                 index.as_ptr(),
@@ -453,6 +502,7 @@ impl AsyncCSSearchableIndex {
             );
         }
 
+        // Leak the CString into the callback; it will be freed by the Swift side
         std::mem::forget(domain_identifiers_cstr);
         DeleteSearchableItemsWithDomainIdentifiersFuture { inner: future }
     }
@@ -467,6 +517,8 @@ impl AsyncCSSearchableIndex {
     ) -> DeleteAllSearchableItemsFuture {
         let (future, ctx) = AsyncCompletion::create();
 
+        // SAFETY: index.as_ptr() is a valid CoreSpotlight index pointer,
+        // and delete_all_searchable_items_cb is a valid callback function that will be called exactly once with ctx as user_data
         unsafe {
             crate::ffi::corespotlight_delete_all_searchable_items_async(
                 index.as_ptr(),
@@ -486,6 +538,8 @@ impl AsyncCSSearchableIndex {
     pub fn fetch_last_client_state(index: &CSSearchableIndex) -> FetchLastClientStateFuture {
         let (future, ctx) = AsyncCompletion::create();
 
+        // SAFETY: index.as_ptr() is a valid CoreSpotlight index pointer,
+        // and fetch_last_client_state_cb is a valid callback function that will be called exactly once with ctx as user_data
         unsafe {
             crate::ffi::corespotlight_fetch_last_client_state_async(
                 index.as_ptr(),

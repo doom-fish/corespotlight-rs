@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 - 2026-05-17
+
+- Quality pass: added panic safety wrapping to all FFI callbacks in async API to prevent panics from unwinding across the C ABI boundary.
+- Added detailed SAFETY comments to all unsafe blocks in async API explaining the safety invariants and assumptions.
+- Added thread-safety documentation to async future types explaining Send/Sync guarantees.
+
 ## 0.3.0 - 2026-05-17
 
 - Added `async` feature gate with async API module (`async_api`).

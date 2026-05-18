@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.3.2] - 2026-05-18
+
+- Widen doom-fish-utils version bound to `<0.3` so 0.2.x resolves.
+
 ## 0.3.1 - 2026-05-17
 
 - Quality pass: added panic safety wrapping to all FFI callbacks in async API to prevent panics from unwinding across the C ABI boundary.

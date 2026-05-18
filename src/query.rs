@@ -1,3 +1,5 @@
+//! Wrappers for `CSSearchQuery`, `CSUserQuery`, and related query types.
+
 use std::time::Duration;
 
 use serde::Deserialize;
@@ -14,19 +16,29 @@ use crate::settings::{CSSearchQueryContext, CSSuggestion, CSUserInteraction, CSU
 impl_object_wrapper!(CSSearchQuery);
 impl_object_wrapper!(CSUserQuery);
 
+/// Aggregates results returned by `CSSearchQuery` execution.
 #[derive(Debug, Clone)]
 pub struct CSSearchQueryExecutionResult {
+    /// Items returned by `CSSearchQuery`.
     pub items: Vec<CSSearchableItem>,
+    /// Mirrors `CSSearchQuery.foundItemCount`.
     pub found_item_count: usize,
+    /// Reports whether `CSSearchQuery` was cancelled.
     pub cancelled: bool,
 }
 
+/// Aggregates results returned by `CSUserQuery` execution.
 #[derive(Debug, Clone)]
 pub struct CSUserQueryExecutionResult {
+    /// Items returned by `CSUserQuery`.
     pub items: Vec<CSSearchableItem>,
+    /// Mirrors `CSUserQuery.foundItemCount`.
     pub found_item_count: usize,
+    /// Suggestions returned by `CSUserQuery`.
     pub suggestions: Vec<CSSuggestion>,
+    /// Mirrors `CSUserQuery.foundSuggestionCount`.
     pub found_suggestion_count: usize,
+    /// Reports whether `CSUserQuery` was cancelled.
     pub cancelled: bool,
 }
 
@@ -120,6 +132,7 @@ where
 }
 
 impl CSSearchQuery {
+    /// Wraps the `CSSearchQuery` initializer.
     pub fn new(
         query_string: impl AsRef<str>,
         query_context: Option<&CSSearchQueryContext>,
@@ -141,6 +154,7 @@ impl CSSearchQuery {
         unsafe { Self::from_retained_ptr(out_query, "search query") }
     }
 
+    /// Wraps a convenience initializer for `CSSearchQuery`.
     pub fn new_with_attributes<I, S>(
         query_string: impl AsRef<str>,
         attributes: I,
@@ -168,6 +182,7 @@ impl CSSearchQuery {
         unsafe { Self::from_retained_ptr(out_query, "search query") }
     }
 
+    /// Wraps the corresponding `CSSearchQuery` operation.
     pub fn execute(
         &self,
         timeout: Duration,
@@ -194,22 +209,27 @@ impl CSSearchQuery {
         })
     }
 
+    /// Wraps the corresponding `CSSearchQuery` cancellation API.
     pub fn cancel(&self) {
         unsafe { ffi::cs_search_query_cancel(self.as_ptr()) };
     }
 
+    /// Wraps the corresponding `CSSearchQuery` getter.
     pub fn is_cancelled(&self) -> bool {
         unsafe { ffi::cs_search_query_is_cancelled(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSSearchQuery` getter.
     pub fn found_item_count(&self) -> usize {
         unsafe { ffi::cs_search_query_found_item_count(self.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `CSSearchQuery` getter.
     pub fn protection_classes(&self) -> Result<Vec<String>, CoreSpotlightError> {
         search_query_protection_classes(self.as_ptr())
     }
 
+    /// Wraps the corresponding `CSSearchQuery` setter.
     pub fn set_protection_classes<I, S>(&self, values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,
@@ -220,6 +240,7 @@ impl CSSearchQuery {
 }
 
 impl CSUserQuery {
+    /// Wraps the corresponding `CSUserQuery` operation.
     pub fn prepare() -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe { ffi::cs_user_query_prepare(&mut out_error) };
@@ -229,6 +250,7 @@ impl CSUserQuery {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSUserQuery` operation.
     pub fn prepare_protection_classes<I, S>(values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,
@@ -246,12 +268,12 @@ impl CSUserQuery {
         Ok(())
     }
 
+    /// Wraps the `CSUserQuery` initializer.
     pub fn new(
         user_query_string: Option<&str>,
         user_query_context: Option<&CSUserQueryContext>,
     ) -> Result<Self, CoreSpotlightError> {
-        let user_query_string =
-            optional_cstring_from_str(user_query_string, "user query string")?;
+        let user_query_string = optional_cstring_from_str(user_query_string, "user query string")?;
         let mut out_query = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
@@ -268,6 +290,7 @@ impl CSUserQuery {
         unsafe { Self::from_retained_ptr(out_query, "user query") }
     }
 
+    /// Wraps the corresponding `CSUserQuery` operation.
     pub fn execute(
         &self,
         timeout: Duration,
@@ -299,26 +322,32 @@ impl CSUserQuery {
         })
     }
 
+    /// Wraps the corresponding `CSUserQuery` getter.
     pub fn found_item_count(&self) -> usize {
         unsafe { ffi::cs_search_query_found_item_count(self.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `CSUserQuery` getter.
     pub fn found_suggestion_count(&self) -> usize {
         unsafe { ffi::cs_user_query_found_suggestion_count(self.as_ptr()) as usize }
     }
 
+    /// Wraps the corresponding `CSUserQuery` cancellation API.
     pub fn cancel(&self) {
         unsafe { ffi::cs_search_query_cancel(self.as_ptr()) };
     }
 
+    /// Wraps the corresponding `CSUserQuery` getter.
     pub fn is_cancelled(&self) -> bool {
         unsafe { ffi::cs_search_query_is_cancelled(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSUserQuery` getter.
     pub fn protection_classes(&self) -> Result<Vec<String>, CoreSpotlightError> {
         search_query_protection_classes(self.as_ptr())
     }
 
+    /// Wraps the corresponding `CSUserQuery` setter.
     pub fn set_protection_classes<I, S>(&self, values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,
@@ -327,6 +356,7 @@ impl CSUserQuery {
         set_search_query_protection_classes(self.as_ptr(), values)
     }
 
+    /// Wraps the corresponding `CSUserQuery` operation.
     pub fn user_engaged_with_item(
         &self,
         item: &CSSearchableItem,
@@ -354,6 +384,7 @@ impl CSUserQuery {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSUserQuery` operation.
     pub fn user_engaged_with_suggestion(
         &self,
         suggestion: &CSSuggestion,

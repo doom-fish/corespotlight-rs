@@ -1,6 +1,6 @@
 [package]
 name = "corespotlight"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/doom-fish/corespotlight-rs"
@@ -59,6 +59,10 @@ maintenance = { status = "actively-developed" }
 
 [[example]]
 name = "01_index_smoke"
+
+[[example]]
+name = "02_async_delete_all"
+required-features = ["async"]
 
 [profile.release]
 debug = "full"

@@ -1,3 +1,5 @@
+//! Wrappers for CoreSpotlight settings, option sets, and exported constants.
+
 use core::fmt;
 
 use serde::Deserialize;
@@ -13,33 +15,51 @@ impl_object_wrapper!(CSSearchQueryContext);
 impl_object_wrapper!(CSUserQueryContext);
 impl_object_wrapper!(CSSuggestion);
 
+/// Error codes mirrored from `CSIndexErrorCode`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(i64)]
 pub enum CSIndexErrorCode {
+    /// Wraps `CSIndexErrorCode.unknownError`.
     UnknownError = -1,
+    /// Wraps `CSIndexErrorCode.indexUnavailableError`.
     IndexUnavailableError = -1000,
+    /// Wraps `CSIndexErrorCode.invalidItemError`.
     InvalidItemError = -1001,
+    /// Wraps `CSIndexErrorCode.invalidClientStateError`.
     InvalidClientStateError = -1002,
+    /// Wraps `CSIndexErrorCode.remoteConnectionError`.
     RemoteConnectionError = -1003,
+    /// Wraps `CSIndexErrorCode.quotaExceeded`.
     QuotaExceeded = -1004,
+    /// Wraps `CSIndexErrorCode.indexingUnsupported`.
     IndexingUnsupported = -1005,
+    /// Wraps `CSIndexErrorCode.mismatchedClientState`.
     MismatchedClientState = -1006,
 }
 
+/// Error codes mirrored from `CSSearchQueryErrorCode`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(i64)]
 pub enum CSSearchQueryErrorCode {
+    /// Wraps `CSSearchQueryErrorCode.unknown`.
     Unknown = -2000,
+    /// Wraps `CSSearchQueryErrorCode.indexUnreachable`.
     IndexUnreachable = -2001,
+    /// Wraps `CSSearchQueryErrorCode.invalidQuery`.
     InvalidQuery = -2002,
+    /// Wraps `CSSearchQueryErrorCode.cancelled`.
     Cancelled = -2003,
 }
 
+/// Suggestion kinds mirrored from `CSSuggestionKind`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(i64)]
 pub enum CSSuggestionKind {
+    /// Wraps `CSSuggestionKind.none`.
     None = 0,
+    /// Wraps `CSSuggestionKind.custom`.
     Custom = 1,
+    /// Wraps `CSSuggestionKind.default`.
     Default = 2,
 }
 
@@ -53,16 +73,21 @@ impl CSSuggestionKind {
     }
 }
 
+/// Interaction kinds mirrored from `CSUserQuery.UserInteraction`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(i64)]
 pub enum CSUserInteraction {
+    /// Wraps selection interactions.
     Select = 0,
+    /// Wraps focus interactions.
     Focus = 1,
 }
 
 impl CSUserInteraction {
+    /// Wraps the default `CSUserInteraction` value used by CoreSpotlight.
     pub const DEFAULT: Self = Self::Select;
 
+    /// Returns the raw `CSUserInteraction` value used by CoreSpotlight.
     pub const fn raw_value(self) -> i64 {
         match self {
             Self::Select => 0,
@@ -71,21 +96,27 @@ impl CSUserInteraction {
     }
 }
 
+/// Option-set wrapper for `CSSearchQueryContext.SourceOptions`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct CSSearchQuerySourceOptions(u64);
 
 impl CSSearchQuerySourceOptions {
+    /// Wraps the default `CSSearchQuerySourceOptions` value used by CoreSpotlight.
     pub const DEFAULT: Self = Self(0);
+    /// Wraps the `CSSearchQuerySourceOptions` associated constant `ALLOW_MAIL`.
     pub const ALLOW_MAIL: Self = Self(1 << 0);
 
+    /// Wraps the `CSSearchQuerySourceOptions` initializer.
     pub const fn new(bits: u64) -> Self {
         Self(bits)
     }
 
+    /// Returns the raw `CSSearchQuerySourceOptions` value used by CoreSpotlight.
     pub const fn bits(self) -> u64 {
         self.0
     }
 
+    /// Reports whether this `CSSearchQuerySourceOptions` value contains another option.
     pub const fn contains(self, other: Self) -> bool {
         self.0 & other.0 == other.0
     }
@@ -105,22 +136,29 @@ impl core::ops::BitOrAssign for CSSearchQuerySourceOptions {
     }
 }
 
+/// Option-set wrapper for `CSSearchableItemUpdateListenerOptions`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct CSSearchableItemUpdateListenerOptions(u64);
 
 impl CSSearchableItemUpdateListenerOptions {
+    /// Wraps the default `CSSearchableItemUpdateListenerOptions` value used by CoreSpotlight.
     pub const DEFAULT: Self = Self(0);
+    /// Wraps the `CSSearchableItemUpdateListenerOptions` associated constant `SUMMARIZATION`.
     pub const SUMMARIZATION: Self = Self(1 << 1);
+    /// Wraps the `CSSearchableItemUpdateListenerOptions` associated constant `PRIORITY`.
     pub const PRIORITY: Self = Self(1 << 2);
 
+    /// Wraps the `CSSearchableItemUpdateListenerOptions` initializer.
     pub const fn new(bits: u64) -> Self {
         Self(bits)
     }
 
+    /// Returns the raw `CSSearchableItemUpdateListenerOptions` value used by CoreSpotlight.
     pub const fn bits(self) -> u64 {
         self.0
     }
 
+    /// Reports whether this `CSSearchableItemUpdateListenerOptions` value contains another option.
     pub const fn contains(self, other: Self) -> bool {
         self.0 & other.0 == other.0
     }
@@ -147,15 +185,21 @@ struct LocalizedSuggestionPayload {
     highlighted_ranges: Vec<LocalizedSuggestionRange>,
 }
 
+/// Highlight range returned by `CSSuggestion.localizedAttributedSuggestion`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct LocalizedSuggestionRange {
+    /// Start offset within the localized suggestion string.
     pub start: usize,
+    /// Length of the highlighted range.
     pub length: usize,
 }
 
+/// Localized suggestion payload returned by `CSSuggestion`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LocalizedSuggestion {
+    /// Localized suggestion string.
     pub string: String,
+    /// Highlighted ranges within `string`.
     pub highlighted_ranges: Vec<LocalizedSuggestionRange>,
 }
 
@@ -236,10 +280,12 @@ fn get_required_string(
         .ok_or_else(|| CoreSpotlightError::bridge(-2, format!("missing {label}")))
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn core_spotlight_version_number() -> f64 {
     unsafe { ffi::cs_core_spotlight_version_number() }
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn core_spotlight_version_string() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_core_spotlight_version_string,
@@ -247,10 +293,12 @@ pub fn core_spotlight_version_string() -> Result<String, CoreSpotlightError> {
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn core_spotlight_api_version() -> i32 {
     unsafe { ffi::cs_core_spotlight_api_version() }
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn index_error_domain() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_index_error_domain,
@@ -258,6 +306,7 @@ pub fn index_error_domain() -> Result<String, CoreSpotlightError> {
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn search_query_error_domain() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_search_query_error_domain,
@@ -265,6 +314,7 @@ pub fn search_query_error_domain() -> Result<String, CoreSpotlightError> {
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn searchable_item_action_type() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_searchable_item_action_type,
@@ -272,6 +322,7 @@ pub fn searchable_item_action_type() -> Result<String, CoreSpotlightError> {
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn searchable_item_activity_identifier() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_searchable_item_activity_identifier,
@@ -279,6 +330,7 @@ pub fn searchable_item_activity_identifier() -> Result<String, CoreSpotlightErro
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn query_continuation_action_type() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_query_continuation_action_type,
@@ -286,10 +338,12 @@ pub fn query_continuation_action_type() -> Result<String, CoreSpotlightError> {
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn search_query_string_key() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_search_query_string_key, "CSSearchQueryString")
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn suggestion_highlight_attribute_name() -> Result<String, CoreSpotlightError> {
     get_required_string(
         ffi::cs_suggestion_highlight_attribute_name,
@@ -297,31 +351,38 @@ pub fn suggestion_highlight_attribute_name() -> Result<String, CoreSpotlightErro
     )
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn mailbox_inbox() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_mailbox_inbox, "CSMailboxInbox")
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn mailbox_drafts() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_mailbox_drafts, "CSMailboxDrafts")
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn mailbox_sent() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_mailbox_sent, "CSMailboxSent")
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn mailbox_junk() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_mailbox_junk, "CSMailboxJunk")
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn mailbox_trash() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_mailbox_trash, "CSMailboxTrash")
 }
 
+/// Returns the corresponding CoreSpotlight constant or metadata value.
 pub fn mailbox_archive() -> Result<String, CoreSpotlightError> {
     get_required_string(ffi::cs_mailbox_archive, "CSMailboxArchive")
 }
 
 impl CSSearchQueryContext {
+    /// Wraps the `CSSearchQueryContext` initializer.
     pub fn new() -> Result<Self, CoreSpotlightError> {
         let mut out_context = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -332,6 +393,7 @@ impl CSSearchQueryContext {
         unsafe { Self::from_retained_ptr(out_context, "search query context") }
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` getter.
     pub fn fetch_attributes(&self) -> Result<Vec<String>, CoreSpotlightError> {
         get_string_array(
             self.as_ptr(),
@@ -340,6 +402,7 @@ impl CSSearchQueryContext {
         )
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` setter.
     pub fn set_fetch_attributes<I, S>(&self, values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,
@@ -354,6 +417,7 @@ impl CSSearchQueryContext {
         )
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` getter.
     pub fn filter_queries(&self) -> Result<Vec<String>, CoreSpotlightError> {
         get_string_array(
             self.as_ptr(),
@@ -362,6 +426,7 @@ impl CSSearchQueryContext {
         )
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` setter.
     pub fn set_filter_queries<I, S>(&self, values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,
@@ -376,6 +441,7 @@ impl CSSearchQueryContext {
         )
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` getter.
     pub fn keyboard_language(&self) -> Option<String> {
         get_optional_string(
             self.as_ptr(),
@@ -383,6 +449,7 @@ impl CSSearchQueryContext {
         )
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` setter.
     pub fn set_keyboard_language(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         set_optional_string(
             self.as_ptr(),
@@ -392,12 +459,14 @@ impl CSSearchQueryContext {
         )
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` getter.
     pub fn source_options(&self) -> CSSearchQuerySourceOptions {
         CSSearchQuerySourceOptions::new(unsafe {
             ffi::cs_search_query_context_get_source_options(self.as_ptr())
         })
     }
 
+    /// Wraps the corresponding `CSSearchQueryContext` setter.
     pub fn set_source_options(
         &self,
         source_options: CSSearchQuerySourceOptions,
@@ -418,6 +487,7 @@ impl CSSearchQueryContext {
 }
 
 impl CSUserQueryContext {
+    /// Wraps the `CSUserQueryContext` initializer.
     pub fn new() -> Result<Self, CoreSpotlightError> {
         let mut out_context = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -428,6 +498,7 @@ impl CSUserQueryContext {
         unsafe { Self::from_retained_ptr(out_context, "user query context") }
     }
 
+    /// Wraps a convenience initializer for `CSUserQueryContext`.
     pub fn with_current_suggestion(
         suggestion: Option<&CSSuggestion>,
     ) -> Result<Self, CoreSpotlightError> {
@@ -446,16 +517,19 @@ impl CSUserQueryContext {
         unsafe { Self::from_retained_ptr(out_context, "user query context") }
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` method.
     pub fn enable_ranked_results(&self) -> bool {
         unsafe { ffi::cs_user_query_context_get_enable_ranked_results(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` setter.
     pub fn set_enable_ranked_results(&self, enabled: bool) {
         unsafe {
             ffi::cs_user_query_context_set_enable_ranked_results(self.as_ptr(), i32::from(enabled));
         }
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` getter.
     pub fn disable_semantic_search(&self) -> Result<bool, CoreSpotlightError> {
         let mut out_value = 0;
         let mut out_error = core::ptr::null_mut();
@@ -472,6 +546,7 @@ impl CSUserQueryContext {
         Ok(out_value != 0)
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` setter.
     pub fn set_disable_semantic_search(&self, disabled: bool) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
@@ -487,22 +562,27 @@ impl CSUserQueryContext {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` getter.
     pub fn max_result_count(&self) -> isize {
         unsafe { ffi::cs_user_query_context_get_max_result_count(self.as_ptr()) as isize }
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` setter.
     pub fn set_max_result_count(&self, value: isize) {
         unsafe { ffi::cs_user_query_context_set_max_result_count(self.as_ptr(), value as i64) };
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` getter.
     pub fn max_suggestion_count(&self) -> isize {
         unsafe { ffi::cs_user_query_context_get_max_suggestion_count(self.as_ptr()) as isize }
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` setter.
     pub fn set_max_suggestion_count(&self, value: isize) {
         unsafe { ffi::cs_user_query_context_set_max_suggestion_count(self.as_ptr(), value as i64) };
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` getter.
     pub fn max_ranked_result_count(&self) -> Result<isize, CoreSpotlightError> {
         let mut out_value = 0_i64;
         let mut out_error = core::ptr::null_mut();
@@ -519,6 +599,7 @@ impl CSUserQueryContext {
         Ok(out_value as isize)
     }
 
+    /// Wraps the corresponding `CSUserQueryContext` setter.
     pub fn set_max_ranked_result_count(&self, value: isize) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
@@ -536,6 +617,7 @@ impl CSUserQueryContext {
 }
 
 impl CSSuggestion {
+    /// Wraps the corresponding `CSSuggestion` getter.
     pub fn localized_attributed_suggestion(
         &self,
     ) -> Result<LocalizedSuggestion, CoreSpotlightError> {
@@ -559,10 +641,12 @@ impl CSSuggestion {
         })
     }
 
+    /// Wraps the corresponding `CSSuggestion` getter.
     pub fn suggestion_kind(&self) -> CSSuggestionKind {
         CSSuggestionKind::from_raw(unsafe { ffi::cs_suggestion_get_kind(self.as_ptr()) })
     }
 
+    /// Wraps the corresponding `CSSuggestion` comparison API.
     pub fn compare(&self, other: &Self) -> core::cmp::Ordering {
         match unsafe { ffi::cs_suggestion_compare(self.as_ptr(), other.as_ptr()) } {
             value if value < 0 => core::cmp::Ordering::Less,
@@ -571,6 +655,7 @@ impl CSSuggestion {
         }
     }
 
+    /// Wraps the corresponding `CSSuggestion` comparison API.
     pub fn compare_by_rank(&self, other: &Self) -> core::cmp::Ordering {
         match unsafe { ffi::cs_suggestion_compare_by_rank(self.as_ptr(), other.as_ptr()) } {
             value if value < 0 => core::cmp::Ordering::Less,

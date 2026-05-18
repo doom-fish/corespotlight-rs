@@ -269,14 +269,16 @@ extern "C" fn fetch_last_client_state_cb(
         if error.is_null() {
             if result.is_null() {
                 // SAFETY: user_data is a valid AsyncCompletion context pointer created by AsyncCompletion::create()
-                unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, "Unknown error".into()) };
+                unsafe {
+                    AsyncCompletion::<Vec<u8>>::complete_err(user_data, "Unknown error".into());
+                };
             } else {
                 // SAFETY: result is a valid C string pointer
                 let result_ptr = result.cast::<i8>();
                 let json_str = unsafe { std::ffi::CStr::from_ptr(result_ptr) }
                     .to_string_lossy()
                     .to_string();
-                
+
                 // Parse JSON to get the Vec<u8>
                 match serde_json::from_str::<Vec<u8>>(&json_str) {
                     Ok(data) => {
@@ -289,7 +291,7 @@ extern "C" fn fetch_last_client_state_cb(
                         unsafe { AsyncCompletion::<Vec<u8>>::complete_err(user_data, err_msg) };
                     }
                 }
-                
+
                 // Free the C string
                 // SAFETY: result_ptr is a valid C string pointer from the Swift callback
                 if !result_ptr.is_null() {
@@ -334,7 +336,8 @@ impl Future for FetchLastClientStateFuture {
 /// Async wrapper for [`CSSearchableIndex`]
 ///
 /// Provides async methods for indexing and managing searchable items
-/// without blocking. **Executor-agnostic** - works with any async runtime.
+/// without blocking. Wraps `CSSearchableIndex` completion-handler APIs and
+/// remains executor-agnostic.
 #[derive(Debug)]
 pub struct AsyncCSSearchableIndex;
 

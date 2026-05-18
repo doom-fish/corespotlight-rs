@@ -1,13 +1,20 @@
+//! Error types returned by the CoreSpotlight bridge.
+
 use core::fmt;
 
 use serde::{Deserialize, Serialize};
 
+/// Error domain used by bridge-generated `CoreSpotlightError` values.
 pub const CORESPOTLIGHT_BRIDGE_ERROR_DOMAIN: &str = "CoreSpotlightBridge";
 
+/// Error type used for failures returned by CoreSpotlight bridge calls.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreSpotlightError {
+    /// Mirrors the `NSError.domain` value returned by CoreSpotlight.
     pub domain: String,
+    /// Mirrors the `NSError.code` value returned by CoreSpotlight.
     pub code: i64,
+    /// Human-readable failure message returned by CoreSpotlight or the bridge.
     pub message: String,
 }
 

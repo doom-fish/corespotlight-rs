@@ -1,3 +1,5 @@
+//! Wrappers for `CSImportExtension`.
+
 use core::ffi::{c_char, c_void};
 use std::ffi::CStr;
 
@@ -103,6 +105,7 @@ pub(crate) unsafe extern "C" fn import_extension_update(
 }
 
 impl CSImportExtension {
+    /// Wraps the `CSImportExtension` initializer.
     pub fn new<F>(update: F) -> Result<Self, CoreSpotlightError>
     where
         F: Fn(CSSearchableItemAttributeSet, &str) -> Result<(), CoreSpotlightError>
@@ -134,6 +137,7 @@ impl CSImportExtension {
         unsafe { Self::from_retained_ptr(out_extension, "import extension") }
     }
 
+    /// Wraps the corresponding `CSImportExtension` operation.
     pub fn simulate_update(
         &self,
         attributes: &CSSearchableItemAttributeSet,

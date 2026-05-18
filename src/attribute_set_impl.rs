@@ -37,24 +37,38 @@ impl_object_wrapper!(CSCustomAttributeKey);
 impl_object_wrapper!(CSPerson);
 impl_object_wrapper!(NSUserActivity);
 
+/// Serializable representation of the data exposed by `CSPerson`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CSPersonData {
+    /// Mirrors `CSPerson.displayName`.
     pub display_name: Option<String>,
+    /// Mirrors the handle values exposed by `CSPerson`.
     pub handles: Vec<String>,
+    /// Mirrors `CSPerson.handleIdentifier`.
     pub handle_identifier: String,
+    /// Mirrors `CSPerson.contactIdentifier`.
     pub contact_identifier: Option<String>,
 }
 
+/// Rust representation of values accepted by `CSSearchableItemAttributeSet` custom attributes.
 #[derive(Debug, Clone, PartialEq)]
 pub enum CustomAttributeValue {
+    /// Wraps string custom-attribute values.
     String(String),
+    /// Wraps numeric custom-attribute values.
     Number(f64),
+    /// Wraps Boolean custom-attribute values.
     Boolean(bool),
+    /// Wraps binary custom-attribute values.
     Bytes(Vec<u8>),
+    /// Wraps date custom-attribute values.
     Date(SystemTime),
+    /// Wraps `CSPerson` custom-attribute values.
     Person(CSPersonData),
+    /// Wraps array custom-attribute values.
     Array(Vec<CustomAttributeValue>),
+    /// Wraps null custom-attribute values.
     Null,
 }
 
@@ -496,6 +510,7 @@ fn set_string_array_map_field(
 }
 
 impl CSSearchableItemAttributeSet {
+    /// Wraps the `CSSearchableItemAttributeSet` initializer.
     pub fn new(item_content_type: impl AsRef<str>) -> Result<Self, CoreSpotlightError> {
         let item_content_type = cstring_from_str(item_content_type.as_ref(), "item content type")?;
         let mut out_attribute_set = core::ptr::null_mut();
@@ -513,10 +528,12 @@ impl CSSearchableItemAttributeSet {
         unsafe { Self::from_retained_ptr(out_attribute_set, "searchable item attribute set") }
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn string(&self, field: AttributeStringField) -> Option<String> {
         string_getter(self.as_ptr(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_string(
         &self,
         field: AttributeStringField,
@@ -525,10 +542,12 @@ impl CSSearchableItemAttributeSet {
         set_string_field(self.as_ptr(), field.as_str(), value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn read_only_string(&self, field: AttributeReadOnlyStringField) -> Option<String> {
         string_getter(self.as_ptr(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn string_array(
         &self,
         field: AttributeStringArrayField,
@@ -536,6 +555,7 @@ impl CSSearchableItemAttributeSet {
         string_array_getter(self.as_ptr(), field.as_str(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_string_array<I, S>(
         &self,
         field: AttributeStringArrayField,
@@ -548,10 +568,12 @@ impl CSSearchableItemAttributeSet {
         set_string_array_field(self.as_ptr(), field.as_str(), values, field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn number(&self, field: AttributeNumberField) -> Result<Option<f64>, CoreSpotlightError> {
         number_getter(self.as_ptr(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_number(
         &self,
         field: AttributeNumberField,
@@ -560,6 +582,7 @@ impl CSSearchableItemAttributeSet {
         set_number_field(self.as_ptr(), field.as_str(), value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn read_only_number(
         &self,
         field: AttributeReadOnlyNumberField,
@@ -567,10 +590,12 @@ impl CSSearchableItemAttributeSet {
         number_getter(self.as_ptr(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn url(&self, field: AttributeUrlField) -> Result<Option<String>, CoreSpotlightError> {
         url_getter(self.as_ptr(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_url(
         &self,
         field: AttributeUrlField,
@@ -579,10 +604,12 @@ impl CSSearchableItemAttributeSet {
         set_url_field(self.as_ptr(), field.as_str(), value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn data(&self, field: AttributeDataField) -> Result<Vec<u8>, CoreSpotlightError> {
         data_getter(self.as_ptr(), field.as_str(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_data(
         &self,
         field: AttributeDataField,
@@ -591,6 +618,7 @@ impl CSSearchableItemAttributeSet {
         set_data_field(self.as_ptr(), field.as_str(), value, field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn date(
         &self,
         field: AttributeDateField,
@@ -598,6 +626,7 @@ impl CSSearchableItemAttributeSet {
         date_getter(self.as_ptr(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_date(
         &self,
         field: AttributeDateField,
@@ -606,6 +635,7 @@ impl CSSearchableItemAttributeSet {
         set_date_field(self.as_ptr(), field.as_str(), value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn date_array(
         &self,
         field: AttributeDateArrayField,
@@ -613,6 +643,7 @@ impl CSSearchableItemAttributeSet {
         date_array_getter(self.as_ptr(), field.as_str(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_date_array<I>(
         &self,
         field: AttributeDateArrayField,
@@ -624,6 +655,7 @@ impl CSSearchableItemAttributeSet {
         set_date_array_field(self.as_ptr(), field.as_str(), values, field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn person_array(
         &self,
         field: AttributePersonArrayField,
@@ -631,6 +663,7 @@ impl CSSearchableItemAttributeSet {
         person_array_getter(self.as_ptr(), field.as_str(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_person_array<I>(
         &self,
         field: AttributePersonArrayField,
@@ -642,6 +675,7 @@ impl CSSearchableItemAttributeSet {
         set_person_array_field(self.as_ptr(), field.as_str(), values, field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn string_array_map(
         &self,
         field: AttributeStringArrayMapField,
@@ -649,6 +683,7 @@ impl CSSearchableItemAttributeSet {
         string_array_map_getter(self.as_ptr(), field.as_str(), field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_string_array_map(
         &self,
         field: AttributeStringArrayMapField,
@@ -657,6 +692,7 @@ impl CSSearchableItemAttributeSet {
         set_string_array_map_field(self.as_ptr(), field.as_str(), values, field.as_str())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_localized_string(
         &self,
         field: AttributeStringField,
@@ -678,6 +714,7 @@ impl CSSearchableItemAttributeSet {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` operation.
     pub fn move_from(&self, source: Self) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
@@ -689,6 +726,7 @@ impl CSSearchableItemAttributeSet {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_custom_value(
         &self,
         key: &CSCustomAttributeKey,
@@ -711,6 +749,7 @@ impl CSSearchableItemAttributeSet {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn custom_value(
         &self,
         key: &CSCustomAttributeKey,
@@ -733,42 +772,52 @@ impl CSSearchableItemAttributeSet {
         Ok(CustomAttributeValue::from_payload(payload))
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn item_content_type(&self) -> Option<String> {
         self.string(AttributeStringField::ContentType)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_item_content_type(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_string(AttributeStringField::ContentType, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn title(&self) -> Option<String> {
         self.string(AttributeStringField::Title)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_title(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_string(AttributeStringField::Title, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn content_description(&self) -> Option<String> {
         self.string(AttributeStringField::ContentDescription)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_content_description(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_string(AttributeStringField::ContentDescription, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn display_name(&self) -> Option<String> {
         self.string(AttributeStringField::DisplayName)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_display_name(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_string(AttributeStringField::DisplayName, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn keywords(&self) -> Result<Vec<String>, CoreSpotlightError> {
         self.string_array(AttributeStringArrayField::Keywords)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_keywords<I, S>(&self, values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,
@@ -777,56 +826,69 @@ impl CSSearchableItemAttributeSet {
         self.set_string_array(AttributeStringArrayField::Keywords, values)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn thumbnail_data(&self) -> Result<Vec<u8>, CoreSpotlightError> {
         self.data(AttributeDataField::ThumbnailData)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_thumbnail_data(&self, data: &[u8]) -> Result<(), CoreSpotlightError> {
         self.set_data(AttributeDataField::ThumbnailData, data)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn thumbnail_url(&self) -> Option<String> {
         self.url(AttributeUrlField::ThumbnailURL).ok().flatten()
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_thumbnail_url(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_url(AttributeUrlField::ThumbnailURL, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn content_url(&self) -> Option<String> {
         self.url(AttributeUrlField::ContentURL).ok().flatten()
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_content_url(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         self.set_url(AttributeUrlField::ContentURL, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn latitude(&self) -> Option<f64> {
         self.number(AttributeNumberField::Latitude).ok().flatten()
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_latitude(&self, value: Option<f64>) -> Result<(), CoreSpotlightError> {
         self.set_number(AttributeNumberField::Latitude, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn longitude(&self) -> Option<f64> {
         self.number(AttributeNumberField::Longitude).ok().flatten()
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_longitude(&self, value: Option<f64>) -> Result<(), CoreSpotlightError> {
         self.set_number(AttributeNumberField::Longitude, value)
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` getter.
     pub fn rating(&self) -> Option<f64> {
         self.number(AttributeNumberField::Rating).ok().flatten()
     }
 
+    /// Wraps the corresponding `CSSearchableItemAttributeSet` setter.
     pub fn set_rating(&self, value: Option<f64>) -> Result<(), CoreSpotlightError> {
         self.set_number(AttributeNumberField::Rating, value)
     }
 }
 
 impl CSLocalizedString {
+    /// Wraps the `CSLocalizedString` initializer.
     pub fn new(localized_strings: &BTreeMap<String, String>) -> Result<Self, CoreSpotlightError> {
         let localized_strings_json = json_cstring(localized_strings, "localized strings")?;
         let mut out_value = core::ptr::null_mut();
@@ -844,12 +906,14 @@ impl CSLocalizedString {
         unsafe { Self::from_retained_ptr(out_value, "localized string") }
     }
 
+    /// Wraps the corresponding `CSLocalizedString` getter.
     pub fn localized_string(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_localized_string_get_localized_string(self.as_ptr())) }
     }
 }
 
 impl CSCustomAttributeKey {
+    /// Wraps the `CSCustomAttributeKey` initializer.
     pub fn new(key_name: impl AsRef<str>) -> Result<Self, CoreSpotlightError> {
         let key_name = cstring_from_str(key_name.as_ref(), "custom attribute key name")?;
         let mut out_key = core::ptr::null_mut();
@@ -864,6 +928,7 @@ impl CSCustomAttributeKey {
     }
 
     #[allow(clippy::fn_params_excessive_bools)]
+    /// Wraps a convenience initializer for `CSCustomAttributeKey`.
     pub fn new_with_options(
         key_name: impl AsRef<str>,
         searchable: bool,
@@ -891,28 +956,34 @@ impl CSCustomAttributeKey {
         unsafe { Self::from_retained_ptr(out_key, "custom attribute key") }
     }
 
+    /// Wraps the corresponding `CSCustomAttributeKey` getter.
     pub fn key_name(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_custom_attribute_key_get_key_name(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `CSCustomAttributeKey` getter.
     pub fn is_searchable(&self) -> bool {
         unsafe { ffi::cs_custom_attribute_key_is_searchable(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSCustomAttributeKey` getter.
     pub fn is_searchable_by_default(&self) -> bool {
         unsafe { ffi::cs_custom_attribute_key_is_searchable_by_default(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSCustomAttributeKey` getter.
     pub fn is_unique(&self) -> bool {
         unsafe { ffi::cs_custom_attribute_key_is_unique(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSCustomAttributeKey` getter.
     pub fn is_multi_valued(&self) -> bool {
         unsafe { ffi::cs_custom_attribute_key_is_multi_valued(self.as_ptr()) != 0 }
     }
 }
 
 impl CSPerson {
+    /// Wraps the `CSPerson` initializer.
     pub fn new<I, S>(
         display_name: Option<&str>,
         handles: I,
@@ -944,10 +1015,12 @@ impl CSPerson {
         unsafe { Self::from_retained_ptr(out_person, "person") }
     }
 
+    /// Wraps the corresponding `CSPerson` getter.
     pub fn display_name(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_person_get_display_name(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `CSPerson` getter.
     pub fn handles(&self) -> Result<Vec<String>, CoreSpotlightError> {
         let mut out_json = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -959,14 +1032,17 @@ impl CSPerson {
         unsafe { parse_json_ptr(out_json, "person handles") }
     }
 
+    /// Wraps the corresponding `CSPerson` getter.
     pub fn handle_identifier(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_person_get_handle_identifier(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `CSPerson` getter.
     pub fn contact_identifier(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_person_get_contact_identifier(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `CSPerson` setter.
     pub fn set_contact_identifier(&self, value: Option<&str>) -> Result<(), CoreSpotlightError> {
         let value = optional_cstring_from_str(value, "person contact identifier")?;
         let mut out_error = core::ptr::null_mut();
@@ -983,6 +1059,7 @@ impl CSPerson {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSPerson` getter.
     pub fn to_data(&self) -> Result<CSPersonData, CoreSpotlightError> {
         Ok(CSPersonData {
             display_name: self.display_name(),
@@ -994,6 +1071,7 @@ impl CSPerson {
 }
 
 impl NSUserActivity {
+    /// Wraps the `NSUserActivity` initializer.
     pub fn new(activity_type: impl AsRef<str>) -> Result<Self, CoreSpotlightError> {
         let activity_type = cstring_from_str(activity_type.as_ref(), "user activity type")?;
         let mut out_activity = core::ptr::null_mut();
@@ -1007,10 +1085,12 @@ impl NSUserActivity {
         unsafe { Self::from_retained_ptr(out_activity, "user activity") }
     }
 
+    /// Wraps the corresponding `NSUserActivity` getter.
     pub fn activity_type(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_user_activity_get_activity_type(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `NSUserActivity` getter.
     pub fn content_attribute_set(&self) -> Option<CSSearchableItemAttributeSet> {
         let attribute_set =
             unsafe { ffi::cs_user_activity_get_content_attribute_set(self.as_ptr()) };
@@ -1023,6 +1103,7 @@ impl NSUserActivity {
         }
     }
 
+    /// Wraps the corresponding `NSUserActivity` setter.
     pub fn set_content_attribute_set(
         &self,
         value: Option<&CSSearchableItemAttributeSet>,

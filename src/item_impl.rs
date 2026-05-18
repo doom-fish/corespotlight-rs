@@ -13,6 +13,7 @@ use crate::settings::CSSearchableItemUpdateListenerOptions;
 impl_object_wrapper!(CSSearchableItem);
 
 impl CSSearchableItem {
+    /// Wraps the `CSSearchableItem` initializer.
     pub fn new(
         unique_identifier: Option<&str>,
         domain_identifier: Option<&str>,
@@ -39,6 +40,7 @@ impl CSSearchableItem {
         unsafe { Self::from_retained_ptr(out_item, "searchable item") }
     }
 
+    /// Wraps the corresponding `CSSearchableItem` comparison API.
     pub fn compare_by_rank(&self, other: &Self) -> core::cmp::Ordering {
         match unsafe { ffi::cs_searchable_item_compare_by_rank(self.as_ptr(), other.as_ptr()) } {
             value if value < 0 => core::cmp::Ordering::Less,
@@ -47,10 +49,12 @@ impl CSSearchableItem {
         }
     }
 
+    /// Wraps the corresponding `CSSearchableItem` getter.
     pub fn unique_identifier(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_searchable_item_get_unique_identifier(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `CSSearchableItem` setter.
     pub fn set_unique_identifier(
         &self,
         unique_identifier: impl AsRef<str>,
@@ -71,10 +75,12 @@ impl CSSearchableItem {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItem` getter.
     pub fn domain_identifier(&self) -> Option<String> {
         unsafe { take_string(ffi::cs_searchable_item_get_domain_identifier(self.as_ptr())) }
     }
 
+    /// Wraps the corresponding `CSSearchableItem` setter.
     pub fn set_domain_identifier(
         &self,
         domain_identifier: Option<&str>,
@@ -94,6 +100,7 @@ impl CSSearchableItem {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItem` getter.
     pub fn expiration_date(&self) -> Option<SystemTime> {
         let mut unix_seconds = 0.0;
         let has_value = unsafe {
@@ -105,6 +112,7 @@ impl CSSearchableItem {
         Some(system_time_from_unix_seconds(unix_seconds))
     }
 
+    /// Wraps the corresponding `CSSearchableItem` setter.
     pub fn set_expiration_date(
         &self,
         expiration_date: Option<SystemTime>,
@@ -128,6 +136,7 @@ impl CSSearchableItem {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItem` getter.
     pub fn attribute_set(&self) -> Result<CSSearchableItemAttributeSet, CoreSpotlightError> {
         let mut out_attribute_set = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -149,6 +158,7 @@ impl CSSearchableItem {
         }
     }
 
+    /// Wraps the corresponding `CSSearchableItem` setter.
     pub fn set_attribute_set(
         &self,
         attribute_set: &CSSearchableItemAttributeSet,
@@ -167,14 +177,17 @@ impl CSSearchableItem {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableItem` getter.
     pub fn is_update(&self) -> bool {
         unsafe { ffi::cs_searchable_item_get_is_update(self.as_ptr()) != 0 }
     }
 
+    /// Wraps the corresponding `CSSearchableItem` setter.
     pub fn set_is_update(&self, is_update: bool) {
         unsafe { ffi::cs_searchable_item_set_is_update(self.as_ptr(), i32::from(is_update)) };
     }
 
+    /// Wraps the corresponding `CSSearchableItem` getter.
     pub fn update_listener_options(&self) -> Result<CSSearchableItemUpdateListenerOptions, CoreSpotlightError> {
         let mut raw_value = 0_u64;
         let mut out_error = core::ptr::null_mut();
@@ -191,6 +204,7 @@ impl CSSearchableItem {
         Ok(CSSearchableItemUpdateListenerOptions::new(raw_value))
     }
 
+    /// Wraps the corresponding `CSSearchableItem` setter.
     pub fn set_update_listener_options(
         &self,
         options: CSSearchableItemUpdateListenerOptions,

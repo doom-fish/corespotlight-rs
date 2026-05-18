@@ -46,6 +46,7 @@ impl RetainedObject {
 
 macro_rules! impl_object_wrapper {
     ($name:ident) => {
+        #[doc = concat!("Wraps `", stringify!($name), "`.")]
         #[derive(Debug, Clone)]
         pub struct $name {
             pub(crate) inner: $crate::private::RetainedObject,
@@ -85,7 +86,9 @@ pub(crate) fn optional_cstring_from_str(
     value: Option<&str>,
     context: &str,
 ) -> Result<Option<CString>, CoreSpotlightError> {
-    value.map(|value| cstring_from_str(value, context)).transpose()
+    value
+        .map(|value| cstring_from_str(value, context))
+        .transpose()
 }
 
 pub(crate) fn opt_cstring_ptr(value: Option<&CString>) -> *const c_char {
@@ -151,10 +154,7 @@ pub(crate) unsafe fn parse_error_ptr(ptr: *mut c_char) -> CoreSpotlightError {
     }
 }
 
-pub(crate) unsafe fn error_from_status(
-    status: i32,
-    err_msg: *mut c_char,
-) -> CoreSpotlightError {
+pub(crate) unsafe fn error_from_status(status: i32, err_msg: *mut c_char) -> CoreSpotlightError {
     if !err_msg.is_null() {
         return parse_error_ptr(err_msg);
     }
@@ -166,16 +166,11 @@ pub(crate) unsafe fn error_from_status(
     CoreSpotlightError::bridge(i64::from(status), message)
 }
 
-pub(crate) fn system_time_to_unix_seconds(
-    time: SystemTime,
-) -> Result<f64, CoreSpotlightError> {
+pub(crate) fn system_time_to_unix_seconds(time: SystemTime) -> Result<f64, CoreSpotlightError> {
     time.duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_secs_f64())
         .map_err(|error| {
-            CoreSpotlightError::bridge(
-                -1,
-                format!("time predates the unix epoch: {error}"),
-            )
+            CoreSpotlightError::bridge(-1, format!("time predates the unix epoch: {error}"))
         })
 }
 

@@ -1,13 +1,24 @@
+//! CoreSpotlight field-key enums used with `CSSearchableItemAttributeSet`.
+
 use serde::{Deserialize, Serialize};
 
 macro_rules! attribute_field_enum {
     ($name:ident { $($variant:ident => $raw:literal),* $(,)? }) => {
+        #[doc = concat!(
+            "Enumerates `CSSearchableItemAttributeSet` field keys for `",
+            stringify!($name),
+            "`."
+        )]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
         pub enum $name {
-            $($variant),*
+            $(
+                #[doc = concat!("Wraps the `", $raw, "` CoreSpotlight attribute key.")]
+                $variant
+            ),*
         }
 
         impl $name {
+            #[doc = "Returns the raw CoreSpotlight field name."]
             pub const fn as_str(self) -> &'static str {
                 match self {
                     $(Self::$variant => $raw),*
@@ -237,4 +248,3 @@ attribute_field_enum!(AttributePersonArrayField {
 attribute_field_enum!(AttributeStringArrayMapField {
     EmailHeaders => "emailHeaders",
 });
-

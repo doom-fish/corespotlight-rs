@@ -1,3 +1,5 @@
+//! Wrappers for `CSSearchableIndexDelegate` and Rust callback builders.
+
 use core::ffi::{c_char, c_void};
 use std::ffi::CStr;
 
@@ -21,23 +23,21 @@ unsafe extern "C" {
 type ReindexAllFn = dyn Fn(CSSearchableIndex) + Send + Sync + 'static;
 type ReindexIdentifiersFn = dyn Fn(CSSearchableIndex, Vec<String>) + Send + Sync + 'static;
 type NotificationFn = dyn Fn(CSSearchableIndex) + Send + Sync + 'static;
-type DataForItemFn =
-    dyn Fn(CSSearchableIndex, &str, &str) -> Result<Option<Vec<u8>>, CoreSpotlightError>
-        + Send
-        + Sync
-        + 'static;
-type FileUrlForItemFn =
-    dyn Fn(CSSearchableIndex, &str, &str, bool) -> Result<Option<String>, CoreSpotlightError>
-        + Send
-        + Sync
-        + 'static;
-type SearchableItemsForIdentifiersFn =
-    dyn Fn(Vec<String>) -> Result<Vec<CSSearchableItem>, CoreSpotlightError>
-        + Send
-        + Sync
-        + 'static;
+type DataForItemFn = dyn Fn(CSSearchableIndex, &str, &str) -> Result<Option<Vec<u8>>, CoreSpotlightError>
+    + Send
+    + Sync
+    + 'static;
+type FileUrlForItemFn = dyn Fn(CSSearchableIndex, &str, &str, bool) -> Result<Option<String>, CoreSpotlightError>
+    + Send
+    + Sync
+    + 'static;
+type SearchableItemsForIdentifiersFn = dyn Fn(Vec<String>) -> Result<Vec<CSSearchableItem>, CoreSpotlightError>
+    + Send
+    + Sync
+    + 'static;
 type SearchableItemsDidUpdateFn = dyn Fn(Vec<CSSearchableItem>) + Send + Sync + 'static;
 
+/// Builder for Rust callbacks that back `CSSearchableIndexDelegate`.
 pub struct CSSearchableIndexDelegateCallbacks {
     reindex_all: Box<ReindexAllFn>,
     reindex_identifiers: Box<ReindexIdentifiersFn>,
@@ -50,6 +50,7 @@ pub struct CSSearchableIndexDelegateCallbacks {
 }
 
 impl CSSearchableIndexDelegateCallbacks {
+    /// Wraps the `CSSearchableIndexDelegate` initializer.
     pub fn new<R1, R2>(reindex_all: R1, reindex_identifiers: R2) -> Self
     where
         R1: Fn(CSSearchableIndex) + Send + Sync + 'static,
@@ -67,6 +68,7 @@ impl CSSearchableIndexDelegateCallbacks {
         }
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` method.
     pub fn did_throttle<F>(mut self, callback: F) -> Self
     where
         F: Fn(CSSearchableIndex) + Send + Sync + 'static,
@@ -75,6 +77,7 @@ impl CSSearchableIndexDelegateCallbacks {
         self
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` method.
     pub fn did_finish_throttle<F>(mut self, callback: F) -> Self
     where
         F: Fn(CSSearchableIndex) + Send + Sync + 'static,
@@ -83,6 +86,7 @@ impl CSSearchableIndexDelegateCallbacks {
         self
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` method.
     pub fn data_for_item<F>(mut self, callback: F) -> Self
     where
         F: Fn(CSSearchableIndex, &str, &str) -> Result<Option<Vec<u8>>, CoreSpotlightError>
@@ -94,6 +98,7 @@ impl CSSearchableIndexDelegateCallbacks {
         self
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` method.
     pub fn file_url_for_item<F>(mut self, callback: F) -> Self
     where
         F: Fn(CSSearchableIndex, &str, &str, bool) -> Result<Option<String>, CoreSpotlightError>
@@ -105,6 +110,7 @@ impl CSSearchableIndexDelegateCallbacks {
         self
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` method.
     pub fn searchable_items_for_identifiers<F>(mut self, callback: F) -> Self
     where
         F: Fn(Vec<String>) -> Result<Vec<CSSearchableItem>, CoreSpotlightError>
@@ -116,6 +122,7 @@ impl CSSearchableIndexDelegateCallbacks {
         self
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` method.
     pub fn searchable_items_did_update<F>(mut self, callback: F) -> Self
     where
         F: Fn(Vec<CSSearchableItem>) + Send + Sync + 'static,
@@ -180,14 +187,19 @@ unsafe fn state_from_context<'a>(context: *mut c_void) -> &'a SearchableIndexDel
     &*context.cast::<SearchableIndexDelegateState>()
 }
 
-fn identifiers_from_json(json: *const c_char, context: &str) -> Result<Vec<String>, CoreSpotlightError> {
+fn identifiers_from_json(
+    json: *const c_char,
+    context: &str,
+) -> Result<Vec<String>, CoreSpotlightError> {
     if json.is_null() {
         return Err(CoreSpotlightError::bridge(
             -1,
             format!("missing {context} JSON payload"),
         ));
     }
-    let json = unsafe { CStr::from_ptr(json) }.to_string_lossy().into_owned();
+    let json = unsafe { CStr::from_ptr(json) }
+        .to_string_lossy()
+        .into_owned();
     parse_json_str(&json, context)
 }
 
@@ -196,15 +208,18 @@ fn items_json(items: &[CSSearchableItem], context: &str) -> Result<String, CoreS
         .iter()
         .map(|item| unsafe { ffi::cs_retain_object(item.as_ptr()) } as usize as u64)
         .collect::<Vec<_>>();
-    serde_json::to_string(&pointers)
-        .map_err(|error| CoreSpotlightError::bridge(-1, format!("failed to encode {context}: {error}")))
+    serde_json::to_string(&pointers).map_err(|error| {
+        CoreSpotlightError::bridge(-1, format!("failed to encode {context}: {error}"))
+    })
 }
 
 pub(crate) unsafe extern "C" fn release_delegate_context(context: *mut c_void) {
     if context.is_null() {
         return;
     }
-    drop(Box::from_raw(context.cast::<SearchableIndexDelegateState>()));
+    drop(Box::from_raw(
+        context.cast::<SearchableIndexDelegateState>(),
+    ));
 }
 
 pub(crate) unsafe extern "C" fn delegate_reindex_all(context: *mut c_void, index_ptr: *mut c_void) {
@@ -235,7 +250,10 @@ pub(crate) unsafe extern "C" fn delegate_reindex_identifiers(
     (state.callbacks.reindex_identifiers)(index, identifiers);
 }
 
-pub(crate) unsafe extern "C" fn delegate_did_throttle(context: *mut c_void, index_ptr: *mut c_void) {
+pub(crate) unsafe extern "C" fn delegate_did_throttle(
+    context: *mut c_void,
+    index_ptr: *mut c_void,
+) {
     if context.is_null() || index_ptr.is_null() {
         return;
     }
@@ -259,7 +277,9 @@ pub(crate) unsafe extern "C" fn delegate_did_finish_throttle(
     let Some(callback) = state.callbacks.did_finish_throttle.as_ref() else {
         return;
     };
-    if let Ok(index) = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate throttle finished index") {
+    if let Ok(index) =
+        CSSearchableIndex::from_retained_ptr(index_ptr, "delegate throttle finished index")
+    {
         callback(index);
     }
 }
@@ -280,20 +300,31 @@ pub(crate) unsafe extern "C" fn delegate_data_for_item(
         return ffi::status::OK;
     };
     let result = (|| {
-        let index = unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate data index")? };
+        let index =
+            unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate data index")? };
         let item_identifier = if item_identifier.is_null() {
             ""
         } else {
-            unsafe { CStr::from_ptr(item_identifier) }.to_str().map_err(|error| {
-                CoreSpotlightError::bridge(-1, format!("invalid item identifier utf-8: {error}"))
-            })?
+            unsafe { CStr::from_ptr(item_identifier) }
+                .to_str()
+                .map_err(|error| {
+                    CoreSpotlightError::bridge(
+                        -1,
+                        format!("invalid item identifier utf-8: {error}"),
+                    )
+                })?
         };
         let type_identifier = if type_identifier.is_null() {
             ""
         } else {
-            unsafe { CStr::from_ptr(type_identifier) }.to_str().map_err(|error| {
-                CoreSpotlightError::bridge(-1, format!("invalid type identifier utf-8: {error}"))
-            })?
+            unsafe { CStr::from_ptr(type_identifier) }
+                .to_str()
+                .map_err(|error| {
+                    CoreSpotlightError::bridge(
+                        -1,
+                        format!("invalid type identifier utf-8: {error}"),
+                    )
+                })?
         };
         let data = callback(index, item_identifier, type_identifier)?;
         write_json_payload(&data.unwrap_or_default(), "delegate data payload", out_json)
@@ -324,20 +355,31 @@ pub(crate) unsafe extern "C" fn delegate_file_url_for_item(
         return ffi::status::OK;
     };
     let result = (|| {
-        let index = unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate file url index")? };
+        let index =
+            unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate file url index")? };
         let item_identifier = if item_identifier.is_null() {
             ""
         } else {
-            unsafe { CStr::from_ptr(item_identifier) }.to_str().map_err(|error| {
-                CoreSpotlightError::bridge(-1, format!("invalid item identifier utf-8: {error}"))
-            })?
+            unsafe { CStr::from_ptr(item_identifier) }
+                .to_str()
+                .map_err(|error| {
+                    CoreSpotlightError::bridge(
+                        -1,
+                        format!("invalid item identifier utf-8: {error}"),
+                    )
+                })?
         };
         let type_identifier = if type_identifier.is_null() {
             ""
         } else {
-            unsafe { CStr::from_ptr(type_identifier) }.to_str().map_err(|error| {
-                CoreSpotlightError::bridge(-1, format!("invalid type identifier utf-8: {error}"))
-            })?
+            unsafe { CStr::from_ptr(type_identifier) }
+                .to_str()
+                .map_err(|error| {
+                    CoreSpotlightError::bridge(
+                        -1,
+                        format!("invalid type identifier utf-8: {error}"),
+                    )
+                })?
         };
         if out_url.is_null() {
             return Ok(());
@@ -373,10 +415,8 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_for_identifiers(
         return ffi::status::OK;
     };
     let result = (|| {
-        let identifiers = identifiers_from_json(
-            identifiers_json,
-            "delegate searchable items identifiers",
-        )?;
+        let identifiers =
+            identifiers_from_json(identifiers_json, "delegate searchable items identifiers")?;
         let items = callback(identifiers)?;
         let items_json = items_json(&items, "delegate searchable items response")?;
         if !out_json.is_null() {
@@ -409,7 +449,9 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_did_update(
     let json = if items_json_ptr.is_null() {
         return;
     } else {
-        unsafe { CStr::from_ptr(items_json_ptr) }.to_string_lossy().into_owned()
+        unsafe { CStr::from_ptr(items_json_ptr) }
+            .to_string_lossy()
+            .into_owned()
     };
     let Ok(pointers) = parse_json_str::<Vec<u64>>(&json, "updated searchable items") else {
         return;
@@ -560,9 +602,7 @@ pub(crate) fn simulate_file_url_request_for_ptr(
     if status != ffi::status::OK {
         return Err(unsafe { error_from_status(status, out_error) });
     }
-    unsafe {
-        Ok(crate::private::take_string(out_url))
-    }
+    unsafe { Ok(crate::private::take_string(out_url)) }
 }
 
 pub(crate) fn simulate_searchable_items_for_identifiers_for_ptr<I, S>(
@@ -588,9 +628,8 @@ where
     if status != ffi::status::OK {
         return Err(unsafe { error_from_status(status, out_error) });
     }
-    let pointers: Vec<u64> = unsafe {
-        parse_json_ptr(out_json, "delegate searchable items result")?
-    };
+    let pointers: Vec<u64> =
+        unsafe { parse_json_ptr(out_json, "delegate searchable items result")? };
     pointers
         .into_iter()
         .map(|pointer| {
@@ -624,9 +663,8 @@ pub(crate) fn simulate_searchable_items_did_update_for_ptr(
 }
 
 impl CSSearchableIndexDelegate {
-    pub fn new(
-        callbacks: CSSearchableIndexDelegateCallbacks,
-    ) -> Result<Self, CoreSpotlightError> {
+    /// Wraps the `CSSearchableIndexDelegate` initializer.
+    pub fn new(callbacks: CSSearchableIndexDelegateCallbacks) -> Result<Self, CoreSpotlightError> {
         let state = Box::new(SearchableIndexDelegateState { callbacks });
         let context = Box::into_raw(state).cast::<c_void>();
         let mut out_delegate = core::ptr::null_mut();
@@ -656,6 +694,7 @@ impl CSSearchableIndexDelegate {
         unsafe { Self::from_retained_ptr(out_delegate, "searchable index delegate") }
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_reindex_all(
         &self,
         index: &CSSearchableIndex,
@@ -663,6 +702,7 @@ impl CSSearchableIndexDelegate {
         simulate_reindex_all_for_ptr(self.as_ptr(), index)
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_reindex_identifiers<I, S>(
         &self,
         index: &CSSearchableIndex,
@@ -675,6 +715,7 @@ impl CSSearchableIndexDelegate {
         simulate_reindex_identifiers_for_ptr(self.as_ptr(), index, identifiers)
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_did_throttle(
         &self,
         index: &CSSearchableIndex,
@@ -682,6 +723,7 @@ impl CSSearchableIndexDelegate {
         simulate_did_throttle_for_ptr(self.as_ptr(), index)
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_did_finish_throttle(
         &self,
         index: &CSSearchableIndex,
@@ -689,6 +731,7 @@ impl CSSearchableIndexDelegate {
         simulate_did_finish_throttle_for_ptr(self.as_ptr(), index)
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_data_request(
         &self,
         index: &CSSearchableIndex,
@@ -698,6 +741,7 @@ impl CSSearchableIndexDelegate {
         simulate_data_request_for_ptr(self.as_ptr(), index, item_identifier, type_identifier)
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_file_url_request(
         &self,
         index: &CSSearchableIndex,
@@ -714,6 +758,7 @@ impl CSSearchableIndexDelegate {
         )
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_searchable_items_for_identifiers<I, S>(
         &self,
         identifiers: I,
@@ -725,6 +770,7 @@ impl CSSearchableIndexDelegate {
         simulate_searchable_items_for_identifiers_for_ptr(self.as_ptr(), identifiers)
     }
 
+    /// Wraps the corresponding `CSSearchableIndexDelegate` operation.
     pub fn simulate_searchable_items_did_update(
         &self,
         items: &[CSSearchableItem],

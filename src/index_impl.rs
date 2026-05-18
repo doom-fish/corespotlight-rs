@@ -9,10 +9,12 @@ use crate::private::{cstring_from_str, error_from_status, impl_object_wrapper, j
 impl_object_wrapper!(CSSearchableIndex);
 
 impl CSSearchableIndex {
+    /// Wraps the corresponding `CSSearchableIndex` getter.
     pub fn is_indexing_available() -> bool {
         unsafe { ffi::cs_searchable_index_is_indexing_available() != 0 }
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` method.
     pub fn default_searchable_index() -> Result<Self, CoreSpotlightError> {
         let mut out_index = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -25,6 +27,7 @@ impl CSSearchableIndex {
         unsafe { Self::from_retained_ptr(out_index, "searchable index") }
     }
 
+    /// Wraps the `CSSearchableIndex` initializer.
     pub fn new(name: impl AsRef<str>) -> Result<Self, CoreSpotlightError> {
         let name = cstring_from_str(name.as_ref(), "searchable index name")?;
         let mut out_index = core::ptr::null_mut();
@@ -38,6 +41,7 @@ impl CSSearchableIndex {
         unsafe { Self::from_retained_ptr(out_index, "searchable index") }
     }
 
+    /// Wraps a convenience initializer for `CSSearchableIndex`.
     pub fn new_with_protection_class(
         name: impl AsRef<str>,
         protection_class: Option<&str>,
@@ -78,6 +82,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` setter.
     pub fn set_delegate(
         &self,
         delegate: Option<&CSSearchableIndexDelegate>,
@@ -87,6 +92,7 @@ impl CSSearchableIndex {
         )
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` setter.
     pub fn set_extension_request_handler(
         &self,
         handler: Option<&CSIndexExtensionRequestHandler>,
@@ -96,6 +102,7 @@ impl CSSearchableIndex {
         )
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` setter.
     pub fn set_default_extension_request_handler(
         &self,
         handler: Option<&DefaultIndexExtensionRequestHandler>,
@@ -106,6 +113,7 @@ impl CSSearchableIndex {
         ))
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn index_searchable_items(
         &self,
         items: &[CSSearchableItem],
@@ -130,6 +138,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn delete_searchable_items_with_identifiers<I, S>(
         &self,
         identifiers: I,
@@ -155,6 +164,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn delete_searchable_items_with_domain_identifiers<I, S>(
         &self,
         identifiers: I,
@@ -180,6 +190,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn delete_all_searchable_items(&self) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe { ffi::cs_searchable_index_delete_all(self.as_ptr(), 30, &mut out_error) };
@@ -189,6 +200,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn begin_index_batch(&self) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe { ffi::cs_searchable_index_begin_batch(self.as_ptr(), &mut out_error) };
@@ -198,6 +210,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` method.
     pub fn end_index_batch_with_client_state(
         &self,
         client_state: &[u8],
@@ -218,6 +231,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` method.
     pub fn end_index_batch_with_expected_client_state(
         &self,
         expected_client_state: Option<&[u8]>,
@@ -245,6 +259,7 @@ impl CSSearchableIndex {
         Ok(())
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn fetch_last_client_state(&self) -> Result<Vec<u8>, CoreSpotlightError> {
         let mut out_json = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
@@ -262,6 +277,7 @@ impl CSSearchableIndex {
         unsafe { crate::private::parse_json_ptr(out_json, "last client state") }
     }
 
+    /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn fetch_data_for_bundle_identifier(
         &self,
         bundle_identifier: impl AsRef<str>,

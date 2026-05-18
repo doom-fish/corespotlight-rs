@@ -425,7 +425,16 @@ public func csAttributeSetMoveFrom(
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     let sourceAttributeSet: CSSearchableItemAttributeSet = csBorrow(sourceAttributeSetPtr)
-    attributeSet.move(from: sourceAttributeSet)
+    let selector = NSSelectorFromString("moveFrom:")
+    guard attributeSet.responds(to: selector) else {
+        let error = csBridgeNSError(
+            code: CSR_FAILURE,
+            message: "CSSearchableItemAttributeSet.moveFrom: is unavailable on this SDK"
+        )
+        csWriteError(error, to: outError)
+        return Int32(error.code)
+    }
+    _ = attributeSet.perform(selector, with: sourceAttributeSet)
     return CSR_OK
 }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.3] - 2026-05-18
+
+- Added rustdoc comments across the public Rust API surface outside `src/ffi/`, bringing the doc pass to full coverage for that audited surface.
+- Made `CSSearchableItemAttributeSet::move_from` degrade gracefully on SDKs where the legacy selector is unavailable instead of failing the Swift bridge build.
+- Marked the async delete-all example as requiring the `async` feature so default `cargo test` runs cleanly.
+
 ## [0.3.2] - 2026-05-18
 
 - Widen doom-fish-utils version bound to `<0.3` so 0.2.x resolves.

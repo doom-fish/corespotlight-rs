@@ -1,4 +1,4 @@
-use std::io::{Error as IoError, ErrorKind};
+use std::io::Error as IoError;
 use std::sync::{Arc, Mutex};
 
 use corespotlight::prelude::*;
@@ -16,10 +16,7 @@ fn user_activity_round_trips_content_attribute_sets() -> Result<(), Box<dyn std:
     activity.set_content_attribute_set(Some(&attributes))?;
 
     let returned = activity.content_attribute_set().ok_or_else(|| {
-        IoError::new(
-            ErrorKind::Other,
-            "missing user activity content attribute set",
-        )
+        IoError::other("missing user activity content attribute set")
     })?;
     assert_eq!(returned.title().as_deref(), Some("Activity Guide"));
 

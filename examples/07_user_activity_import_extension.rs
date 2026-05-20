@@ -1,4 +1,4 @@
-use std::io::{Error as IoError, ErrorKind};
+use std::io::Error as IoError;
 
 use corespotlight::prelude::*;
 
@@ -18,10 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     activity.set_content_attribute_set(Some(&attributes))?;
 
     let attached = activity.content_attribute_set().ok_or_else(|| {
-        IoError::new(
-            ErrorKind::Other,
-            "content attribute set was not attached to the user activity",
-        )
+        IoError::other("content attribute set was not attached to the user activity")
     })?;
 
     println!(

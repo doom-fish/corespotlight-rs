@@ -5,6 +5,8 @@ use std::ffi::CStr;
 
 use serde::Serialize;
 
+use doom_fish_utils::panic_safe::catch_user_panic;
+
 use crate::error::{CoreSpotlightError, ErrorPayload};
 use crate::ffi;
 use crate::index::CSSearchableIndex;
@@ -228,7 +230,9 @@ pub(crate) unsafe extern "C" fn delegate_reindex_all(context: *mut c_void, index
     }
     let state = state_from_context(context);
     if let Ok(index) = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate index") {
-        (state.callbacks.reindex_all)(index);
+        catch_user_panic("delegate_reindex_all", || {
+            (state.callbacks.reindex_all)(index);
+        });
     }
 }
 
@@ -247,7 +251,9 @@ pub(crate) unsafe extern "C" fn delegate_reindex_identifiers(
     let Ok(identifiers) = identifiers_from_json(identifiers_json, "delegate identifiers") else {
         return;
     };
-    (state.callbacks.reindex_identifiers)(index, identifiers);
+    catch_user_panic("delegate_reindex_identifiers", || {
+        (state.callbacks.reindex_identifiers)(index, identifiers);
+    });
 }
 
 pub(crate) unsafe extern "C" fn delegate_did_throttle(
@@ -262,7 +268,9 @@ pub(crate) unsafe extern "C" fn delegate_did_throttle(
         return;
     };
     if let Ok(index) = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate throttled index") {
-        callback(index);
+        catch_user_panic("delegate_did_throttle", || {
+            callback(index);
+        });
     }
 }
 
@@ -280,7 +288,9 @@ pub(crate) unsafe extern "C" fn delegate_did_finish_throttle(
     if let Ok(index) =
         CSSearchableIndex::from_retained_ptr(index_ptr, "delegate throttle finished index")
     {
-        callback(index);
+        catch_user_panic("delegate_did_finish_throttle", || {
+            callback(index);
+        });
     }
 }
 
@@ -299,7 +309,7 @@ pub(crate) unsafe extern "C" fn delegate_data_for_item(
     let Some(callback) = state.callbacks.data_for_item.as_ref() else {
         return ffi::status::OK;
     };
-    let result = (|| {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let index =
             unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate data index")? };
         let item_identifier = if item_identifier.is_null() {
@@ -328,7 +338,13 @@ pub(crate) unsafe extern "C" fn delegate_data_for_item(
         };
         let data = callback(index, item_identifier, type_identifier)?;
         write_json_payload(&data.unwrap_or_default(), "delegate data payload", out_json)
-    })();
+    }))
+    .unwrap_or_else(|_| {
+        Err(CoreSpotlightError::bridge(
+            i64::from(ffi::status::FAILURE),
+            "delegate data callback panicked",
+        ))
+    });
     match result {
         Ok(()) => ffi::status::OK,
         Err(error) => {
@@ -354,7 +370,7 @@ pub(crate) unsafe extern "C" fn delegate_file_url_for_item(
     let Some(callback) = state.callbacks.file_url_for_item.as_ref() else {
         return ffi::status::OK;
     };
-    let result = (|| {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let index =
             unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate file url index")? };
         let item_identifier = if item_identifier.is_null() {
@@ -391,7 +407,13 @@ pub(crate) unsafe extern "C" fn delegate_file_url_for_item(
             };
         }
         Ok(())
-    })();
+    }))
+    .unwrap_or_else(|_| {
+        Err(CoreSpotlightError::bridge(
+            i64::from(ffi::status::FAILURE),
+            "delegate file URL callback panicked",
+        ))
+    });
     match result {
         Ok(()) => ffi::status::OK,
         Err(error) => {
@@ -414,7 +436,7 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_for_identifiers(
     let Some(callback) = state.callbacks.searchable_items_for_identifiers.as_ref() else {
         return ffi::status::OK;
     };
-    let result = (|| {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let identifiers =
             identifiers_from_json(identifiers_json, "delegate searchable items identifiers")?;
         let items = callback(identifiers)?;
@@ -425,7 +447,13 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_for_identifiers(
             }
         }
         Ok(())
-    })();
+    }))
+    .unwrap_or_else(|_| {
+        Err(CoreSpotlightError::bridge(
+            i64::from(ffi::status::FAILURE),
+            "delegate searchable items callback panicked",
+        ))
+    });
     match result {
         Ok(()) => ffi::status::OK,
         Err(error) => {
@@ -464,7 +492,9 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_did_update(
         })
         .collect::<Result<Vec<_>, _>>();
     if let Ok(items) = items {
-        callback(items);
+        catch_user_panic("delegate_searchable_items_did_update", || {
+            callback(items);
+        });
     }
 }
 

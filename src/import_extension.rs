@@ -70,30 +70,38 @@ pub(crate) unsafe extern "C" fn import_extension_update(
     content_url: *const c_char,
     out_error: *mut *mut c_char,
 ) -> i32 {
-    let result = (|| -> Result<(), CoreSpotlightError> {
-        if context.is_null() || attributes_ptr.is_null() || content_url.is_null() {
-            return Err(CoreSpotlightError::bridge(
-                i64::from(ffi::status::INVALID_ARGUMENT),
-                "missing import extension callback arguments",
-            ));
-        }
-        let state = state_from_context(context);
-        let attributes = unsafe {
-            CSSearchableItemAttributeSet::from_retained_ptr(
-                attributes_ptr,
-                "import extension attribute set",
-            )
-        }?;
-        let content_url = unsafe { CStr::from_ptr(content_url) }
-            .to_str()
-            .map_err(|error| {
-                CoreSpotlightError::bridge(
-                    -1,
-                    format!("invalid import extension content URL utf-8: {error}"),
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+        || -> Result<(), CoreSpotlightError> {
+            if context.is_null() || attributes_ptr.is_null() || content_url.is_null() {
+                return Err(CoreSpotlightError::bridge(
+                    i64::from(ffi::status::INVALID_ARGUMENT),
+                    "missing import extension callback arguments",
+                ));
+            }
+            let state = state_from_context(context);
+            let attributes = unsafe {
+                CSSearchableItemAttributeSet::from_retained_ptr(
+                    attributes_ptr,
+                    "import extension attribute set",
                 )
-            })?;
-        (state.update)(attributes, content_url)
-    })();
+            }?;
+            let content_url = unsafe { CStr::from_ptr(content_url) }
+                .to_str()
+                .map_err(|error| {
+                    CoreSpotlightError::bridge(
+                        -1,
+                        format!("invalid import extension content URL utf-8: {error}"),
+                    )
+                })?;
+            (state.update)(attributes, content_url)
+        },
+    ))
+    .unwrap_or_else(|_| {
+        Err(CoreSpotlightError::bridge(
+            i64::from(ffi::status::FAILURE),
+            "import extension update callback panicked",
+        ))
+    });
 
     match result {
         Ok(()) => ffi::status::OK,

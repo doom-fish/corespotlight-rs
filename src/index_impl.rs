@@ -19,7 +19,7 @@ impl CSSearchableIndex {
         let mut out_index = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_searchable_index_default_searchable_index(&mut out_index, &mut out_error)
+            ffi::cs_searchable_index_default_searchable_index(&raw mut out_index, &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -33,7 +33,7 @@ impl CSSearchableIndex {
         let mut out_index = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_searchable_index_new(name.as_ptr(), &mut out_index, &mut out_error)
+            ffi::cs_searchable_index_new(name.as_ptr(), &raw mut out_index, &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -58,8 +58,8 @@ impl CSSearchableIndex {
                 protection_class
                     .as_ref()
                     .map_or(core::ptr::null(), |value| value.as_ptr()),
-                &mut out_index,
-                &mut out_error,
+                &raw mut out_index,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -74,7 +74,7 @@ impl CSSearchableIndex {
     ) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_searchable_index_set_delegate(self.as_ptr(), delegate_ptr, &mut out_error)
+            ffi::cs_searchable_index_set_delegate(self.as_ptr(), delegate_ptr, &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -129,7 +129,7 @@ impl CSSearchableIndex {
                 self.as_ptr(),
                 items_json.as_ptr(),
                 30,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -155,7 +155,7 @@ impl CSSearchableIndex {
                 self.as_ptr(),
                 identifiers_json.as_ptr(),
                 30,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -181,7 +181,7 @@ impl CSSearchableIndex {
                 self.as_ptr(),
                 identifiers_json.as_ptr(),
                 30,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -193,7 +193,7 @@ impl CSSearchableIndex {
     /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn delete_all_searchable_items(&self) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
-        let status = unsafe { ffi::cs_searchable_index_delete_all(self.as_ptr(), 30, &mut out_error) };
+        let status = unsafe { ffi::cs_searchable_index_delete_all(self.as_ptr(), 30, &raw mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -203,7 +203,7 @@ impl CSSearchableIndex {
     /// Wraps the corresponding `CSSearchableIndex` operation.
     pub fn begin_index_batch(&self) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
-        let status = unsafe { ffi::cs_searchable_index_begin_batch(self.as_ptr(), &mut out_error) };
+        let status = unsafe { ffi::cs_searchable_index_begin_batch(self.as_ptr(), &raw mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -222,7 +222,7 @@ impl CSSearchableIndex {
                 self.as_ptr(),
                 client_state_json.as_ptr(),
                 30,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -250,7 +250,7 @@ impl CSSearchableIndex {
                     .map_or(core::ptr::null(), |value| value.as_ptr()),
                 new_client_state_json.as_ptr(),
                 30,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -267,8 +267,8 @@ impl CSSearchableIndex {
             ffi::cs_searchable_index_fetch_last_client_state(
                 self.as_ptr(),
                 30,
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -297,8 +297,8 @@ impl CSSearchableIndex {
                 item_identifier.as_ptr(),
                 content_type.as_ptr(),
                 30,
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

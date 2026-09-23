@@ -99,7 +99,7 @@ fn search_query_protection_classes(
     let mut out_json = core::ptr::null_mut();
     let mut out_error = core::ptr::null_mut();
     let status = unsafe {
-        ffi::cs_search_query_get_protection_classes(object_ptr, &mut out_json, &mut out_error)
+        ffi::cs_search_query_get_protection_classes(object_ptr, &raw mut out_json, &raw mut out_error)
     };
     if status != ffi::status::OK {
         return Err(unsafe { error_from_status(status, out_error) });
@@ -122,7 +122,7 @@ where
         ffi::cs_search_query_set_protection_classes(
             object_ptr,
             values_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -144,8 +144,8 @@ impl CSSearchQuery {
             ffi::cs_search_query_new(
                 query_string.as_ptr(),
                 query_context.map_or(core::ptr::null_mut(), CSSearchQueryContext::as_ptr),
-                &mut out_query,
-                &mut out_error,
+                &raw mut out_query,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -172,8 +172,8 @@ impl CSSearchQuery {
             ffi::cs_search_query_new_with_attributes(
                 query_string.as_ptr(),
                 attributes_json.as_ptr(),
-                &mut out_query,
-                &mut out_error,
+                &raw mut out_query,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -193,8 +193,8 @@ impl CSSearchQuery {
             ffi::cs_search_query_execute(
                 self.as_ptr(),
                 timeout_seconds(timeout),
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -243,7 +243,7 @@ impl CSUserQuery {
     /// Wraps the corresponding `CSUserQuery` operation.
     pub fn prepare() -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
-        let status = unsafe { ffi::cs_user_query_prepare(&mut out_error) };
+        let status = unsafe { ffi::cs_user_query_prepare(&raw mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -260,7 +260,7 @@ impl CSUserQuery {
         let values_json = json_cstring(&values, "user query protection classes")?;
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_user_query_prepare_protection_classes(values_json.as_ptr(), &mut out_error)
+            ffi::cs_user_query_prepare_protection_classes(values_json.as_ptr(), &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -280,8 +280,8 @@ impl CSUserQuery {
             ffi::cs_user_query_new(
                 opt_cstring_ptr(user_query_string.as_ref()),
                 user_query_context.map_or(core::ptr::null_mut(), CSUserQueryContext::as_ptr),
-                &mut out_query,
-                &mut out_error,
+                &raw mut out_query,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -301,8 +301,8 @@ impl CSUserQuery {
             ffi::cs_user_query_execute(
                 self.as_ptr(),
                 timeout_seconds(timeout),
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -375,7 +375,7 @@ impl CSUserQuery {
                 item.as_ptr(),
                 visible_items_json.as_ptr(),
                 interaction.raw_value(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -404,7 +404,7 @@ impl CSUserQuery {
                 suggestion.as_ptr(),
                 visible_suggestions_json.as_ptr(),
                 interaction.raw_value(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

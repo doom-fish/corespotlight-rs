@@ -132,8 +132,8 @@ impl CSImportExtension {
                 context,
                 Some(release_import_extension_context),
                 Some(import_extension_update),
-                &mut out_extension,
-                &mut out_error,
+                &raw mut out_extension,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -158,7 +158,7 @@ impl CSImportExtension {
                 self.as_ptr(),
                 attributes.as_ptr(),
                 content_url.as_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

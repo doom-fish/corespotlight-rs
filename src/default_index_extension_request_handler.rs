@@ -15,7 +15,7 @@ impl DefaultIndexExtensionRequestHandler {
         let mut out_handler = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_default_index_extension_request_handler_new(&mut out_handler, &mut out_error)
+            ffi::cs_default_index_extension_request_handler_new(&raw mut out_handler, &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -62,8 +62,8 @@ impl DefaultIndexExtensionRequestHandler {
         let status = unsafe {
             ffi::cs_default_index_extension_request_handler_get_last_identifiers(
                 self.as_ptr(),
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

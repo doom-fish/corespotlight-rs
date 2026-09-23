@@ -507,7 +507,7 @@ pub(crate) fn simulate_reindex_all_for_ptr(
         ffi::cs_searchable_index_delegate_simulate_reindex_all(
             object_ptr,
             index.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -533,7 +533,7 @@ where
             object_ptr,
             index.as_ptr(),
             identifiers_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -551,7 +551,7 @@ pub(crate) fn simulate_did_throttle_for_ptr(
         ffi::cs_searchable_index_delegate_simulate_did_throttle(
             object_ptr,
             index.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -569,7 +569,7 @@ pub(crate) fn simulate_did_finish_throttle_for_ptr(
         ffi::cs_searchable_index_delegate_simulate_did_finish_throttle(
             object_ptr,
             index.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -594,8 +594,8 @@ pub(crate) fn simulate_data_request_for_ptr(
             index.as_ptr(),
             item_identifier.as_ptr(),
             type_identifier.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -625,8 +625,8 @@ pub(crate) fn simulate_file_url_request_for_ptr(
             item_identifier.as_ptr(),
             type_identifier.as_ptr(),
             i32::from(in_place),
-            &mut out_url,
-            &mut out_error,
+            &raw mut out_url,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -651,8 +651,8 @@ where
         ffi::cs_searchable_index_delegate_simulate_searchable_items_for_identifiers(
             object_ptr,
             identifiers_json.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -683,7 +683,7 @@ pub(crate) fn simulate_searchable_items_did_update_for_ptr(
         ffi::cs_searchable_index_delegate_simulate_searchable_items_did_update(
             object_ptr,
             items_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -711,8 +711,8 @@ impl CSSearchableIndexDelegate {
                 Some(delegate_file_url_for_item),
                 Some(delegate_searchable_items_for_identifiers),
                 Some(delegate_searchable_items_did_update),
-                &mut out_delegate,
-                &mut out_error,
+                &raw mut out_delegate,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

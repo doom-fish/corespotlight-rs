@@ -30,8 +30,8 @@ impl CSIndexExtensionRequestHandler {
                 Some(delegate::delegate_file_url_for_item),
                 Some(delegate::delegate_searchable_items_for_identifiers),
                 Some(delegate::delegate_searchable_items_did_update),
-                &mut out_handler,
-                &mut out_error,
+                &raw mut out_handler,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

@@ -144,7 +144,7 @@ fn set_string_field(
             object_ptr,
             field_name.as_ptr(),
             opt_cstring_ptr(value.as_ref()),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -165,8 +165,8 @@ fn string_array_getter(
         ffi::cs_attribute_set_get_string_array(
             object_ptr,
             field_name.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -194,7 +194,7 @@ where
             object_ptr,
             field_name.as_ptr(),
             values_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -210,7 +210,7 @@ fn number_getter(
     let field_name = cstring_from_str(field_name, "attribute field name")?;
     let mut value = 0.0;
     let has_value =
-        unsafe { ffi::cs_attribute_set_get_number(object_ptr, field_name.as_ptr(), &mut value) };
+        unsafe { ffi::cs_attribute_set_get_number(object_ptr, field_name.as_ptr(), &raw mut value) };
     if has_value == 0 {
         return Ok(None);
     }
@@ -230,7 +230,7 @@ fn set_number_field(
             field_name.as_ptr(),
             value.unwrap_or_default(),
             i32::from(value.is_some()),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -265,7 +265,7 @@ fn set_url_field(
             object_ptr,
             field_name.as_ptr(),
             opt_cstring_ptr(value.as_ref()),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -286,8 +286,8 @@ fn data_getter(
         ffi::cs_attribute_set_get_data(
             object_ptr,
             field_name.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -310,7 +310,7 @@ fn set_data_field(
             object_ptr,
             field_name.as_ptr(),
             value_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -326,7 +326,7 @@ fn date_getter(
     let field_name = cstring_from_str(field_name, "attribute field name")?;
     let mut value = 0.0;
     let has_value =
-        unsafe { ffi::cs_attribute_set_get_date(object_ptr, field_name.as_ptr(), &mut value) };
+        unsafe { ffi::cs_attribute_set_get_date(object_ptr, field_name.as_ptr(), &raw mut value) };
     if has_value == 0 {
         return Ok(None);
     }
@@ -350,7 +350,7 @@ fn set_date_field(
             field_name.as_ptr(),
             unix_seconds,
             i32::from(value.is_some()),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -371,8 +371,8 @@ fn date_array_getter(
         ffi::cs_attribute_set_get_date_array(
             object_ptr,
             field_name.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -406,7 +406,7 @@ where
             object_ptr,
             field_name.as_ptr(),
             values_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -427,8 +427,8 @@ fn person_array_getter(
         ffi::cs_attribute_set_get_person_array(
             object_ptr,
             field_name.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -455,7 +455,7 @@ where
             object_ptr,
             field_name.as_ptr(),
             values_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -476,8 +476,8 @@ fn string_array_map_getter(
         ffi::cs_attribute_set_get_string_array_map(
             object_ptr,
             field_name.as_ptr(),
-            &mut out_json,
-            &mut out_error,
+            &raw mut out_json,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -500,7 +500,7 @@ fn set_string_array_map_field(
             object_ptr,
             field_name.as_ptr(),
             values_json.as_ptr(),
-            &mut out_error,
+            &raw mut out_error,
         )
     };
     if status != ffi::status::OK {
@@ -518,8 +518,8 @@ impl CSSearchableItemAttributeSet {
         let status = unsafe {
             ffi::cs_attribute_set_new(
                 item_content_type.as_ptr(),
-                &mut out_attribute_set,
-                &mut out_error,
+                &raw mut out_attribute_set,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -705,7 +705,7 @@ impl CSSearchableItemAttributeSet {
                 self.as_ptr(),
                 field_name.as_ptr(),
                 value.as_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -718,7 +718,7 @@ impl CSSearchableItemAttributeSet {
     pub fn move_from(&self, source: Self) -> Result<(), CoreSpotlightError> {
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_attribute_set_move_from(self.as_ptr(), source.as_ptr(), &mut out_error)
+            ffi::cs_attribute_set_move_from(self.as_ptr(), source.as_ptr(), &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -740,7 +740,7 @@ impl CSSearchableItemAttributeSet {
                 self.as_ptr(),
                 key.as_ptr(),
                 payload_json.as_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -760,8 +760,8 @@ impl CSSearchableItemAttributeSet {
             ffi::cs_attribute_set_get_custom_value(
                 self.as_ptr(),
                 key.as_ptr(),
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -896,8 +896,8 @@ impl CSLocalizedString {
         let status = unsafe {
             ffi::cs_localized_string_new(
                 localized_strings_json.as_ptr(),
-                &mut out_value,
-                &mut out_error,
+                &raw mut out_value,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -919,7 +919,7 @@ impl CSCustomAttributeKey {
         let mut out_key = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_custom_attribute_key_new(key_name.as_ptr(), &mut out_key, &mut out_error)
+            ffi::cs_custom_attribute_key_new(key_name.as_ptr(), &raw mut out_key, &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -946,8 +946,8 @@ impl CSCustomAttributeKey {
                 i32::from(searchable_by_default),
                 i32::from(unique),
                 i32::from(multi_valued),
-                &mut out_key,
-                &mut out_error,
+                &raw mut out_key,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -1005,8 +1005,8 @@ impl CSPerson {
                 opt_cstring_ptr(display_name.as_ref()),
                 handles_json.as_ptr(),
                 handle_identifier.as_ptr(),
-                &mut out_person,
-                &mut out_error,
+                &raw mut out_person,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -1025,7 +1025,7 @@ impl CSPerson {
         let mut out_json = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status =
-            unsafe { ffi::cs_person_get_handles(self.as_ptr(), &mut out_json, &mut out_error) };
+            unsafe { ffi::cs_person_get_handles(self.as_ptr(), &raw mut out_json, &raw mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -1050,7 +1050,7 @@ impl CSPerson {
             ffi::cs_person_set_contact_identifier(
                 self.as_ptr(),
                 opt_cstring_ptr(value.as_ref()),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -1077,7 +1077,7 @@ impl NSUserActivity {
         let mut out_activity = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
         let status = unsafe {
-            ffi::cs_user_activity_new(activity_type.as_ptr(), &mut out_activity, &mut out_error)
+            ffi::cs_user_activity_new(activity_type.as_ptr(), &raw mut out_activity, &raw mut out_error)
         };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
@@ -1113,7 +1113,7 @@ impl NSUserActivity {
             ffi::cs_user_activity_set_content_attribute_set(
                 self.as_ptr(),
                 value.map_or(core::ptr::null_mut(), CSSearchableItemAttributeSet::as_ptr),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

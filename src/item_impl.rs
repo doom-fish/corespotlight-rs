@@ -30,8 +30,8 @@ impl CSSearchableItem {
                 opt_cstring_ptr(unique_identifier.as_ref()),
                 opt_cstring_ptr(domain_identifier.as_ref()),
                 attribute_set.as_ptr(),
-                &mut out_item,
-                &mut out_error,
+                &raw mut out_item,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -66,7 +66,7 @@ impl CSSearchableItem {
             ffi::cs_searchable_item_set_unique_identifier(
                 self.as_ptr(),
                 unique_identifier.as_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -91,7 +91,7 @@ impl CSSearchableItem {
             ffi::cs_searchable_item_set_domain_identifier(
                 self.as_ptr(),
                 opt_cstring_ptr(domain_identifier.as_ref()),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -104,7 +104,7 @@ impl CSSearchableItem {
     pub fn expiration_date(&self) -> Option<SystemTime> {
         let mut unix_seconds = 0.0;
         let has_value = unsafe {
-            ffi::cs_searchable_item_get_expiration_date(self.as_ptr(), &mut unix_seconds)
+            ffi::cs_searchable_item_get_expiration_date(self.as_ptr(), &raw mut unix_seconds)
         };
         if has_value == 0 {
             return None;
@@ -127,7 +127,7 @@ impl CSSearchableItem {
                 self.as_ptr(),
                 unix_seconds,
                 i32::from(expiration_date.is_some()),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -143,8 +143,8 @@ impl CSSearchableItem {
         let status = unsafe {
             ffi::cs_searchable_item_get_attribute_set(
                 self.as_ptr(),
-                &mut out_attribute_set,
-                &mut out_error,
+                &raw mut out_attribute_set,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -168,7 +168,7 @@ impl CSSearchableItem {
             ffi::cs_searchable_item_set_attribute_set(
                 self.as_ptr(),
                 attribute_set.as_ptr(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -194,8 +194,8 @@ impl CSSearchableItem {
         let status = unsafe {
             ffi::cs_searchable_item_get_update_listener_options(
                 self.as_ptr(),
-                &mut raw_value,
-                &mut out_error,
+                &raw mut raw_value,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -214,7 +214,7 @@ impl CSSearchableItem {
             ffi::cs_searchable_item_set_update_listener_options(
                 self.as_ptr(),
                 options.bits(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

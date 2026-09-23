@@ -221,7 +221,7 @@ fn set_string_array(
 ) -> Result<(), CoreSpotlightError> {
     let values_json = json_cstring(values, context)?;
     let mut out_error = core::ptr::null_mut();
-    let status = unsafe { setter(object_ptr, values_json.as_ptr(), &mut out_error) };
+    let status = unsafe { setter(object_ptr, values_json.as_ptr(), &raw mut out_error) };
     if status != ffi::status::OK {
         return Err(unsafe { error_from_status(status, out_error) });
     }
@@ -239,7 +239,7 @@ fn get_string_array(
 ) -> Result<Vec<String>, CoreSpotlightError> {
     let mut out_json = core::ptr::null_mut();
     let mut out_error = core::ptr::null_mut();
-    let status = unsafe { getter(object_ptr, &mut out_json, &mut out_error) };
+    let status = unsafe { getter(object_ptr, &raw mut out_json, &raw mut out_error) };
     if status != ffi::status::OK {
         return Err(unsafe { error_from_status(status, out_error) });
     }
@@ -258,7 +258,7 @@ fn set_optional_string(
 ) -> Result<(), CoreSpotlightError> {
     let value = optional_cstring_from_str(value, context)?;
     let mut out_error = core::ptr::null_mut();
-    let status = unsafe { setter(object_ptr, opt_cstring_ptr(value.as_ref()), &mut out_error) };
+    let status = unsafe { setter(object_ptr, opt_cstring_ptr(value.as_ref()), &raw mut out_error) };
     if status != ffi::status::OK {
         return Err(unsafe { error_from_status(status, out_error) });
     }
@@ -386,7 +386,7 @@ impl CSSearchQueryContext {
     pub fn new() -> Result<Self, CoreSpotlightError> {
         let mut out_context = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
-        let status = unsafe { ffi::cs_search_query_context_new(&mut out_context, &mut out_error) };
+        let status = unsafe { ffi::cs_search_query_context_new(&raw mut out_context, &raw mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -476,7 +476,7 @@ impl CSSearchQueryContext {
             ffi::cs_search_query_context_set_source_options(
                 self.as_ptr(),
                 source_options.bits(),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -491,7 +491,7 @@ impl CSUserQueryContext {
     pub fn new() -> Result<Self, CoreSpotlightError> {
         let mut out_context = core::ptr::null_mut();
         let mut out_error = core::ptr::null_mut();
-        let status = unsafe { ffi::cs_user_query_context_new(&mut out_context, &mut out_error) };
+        let status = unsafe { ffi::cs_user_query_context_new(&raw mut out_context, &raw mut out_error) };
         if status != ffi::status::OK {
             return Err(unsafe { error_from_status(status, out_error) });
         }
@@ -507,8 +507,8 @@ impl CSUserQueryContext {
         let status = unsafe {
             ffi::cs_user_query_context_with_current_suggestion(
                 suggestion.map_or(core::ptr::null_mut(), CSSuggestion::as_ptr),
-                &mut out_context,
-                &mut out_error,
+                &raw mut out_context,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -536,8 +536,8 @@ impl CSUserQueryContext {
         let status = unsafe {
             ffi::cs_user_query_context_get_disable_semantic_search(
                 self.as_ptr(),
-                &mut out_value,
-                &mut out_error,
+                &raw mut out_value,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -553,7 +553,7 @@ impl CSUserQueryContext {
             ffi::cs_user_query_context_set_disable_semantic_search(
                 self.as_ptr(),
                 i32::from(disabled),
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -589,8 +589,8 @@ impl CSUserQueryContext {
         let status = unsafe {
             ffi::cs_user_query_context_get_max_ranked_result_count(
                 self.as_ptr(),
-                &mut out_value,
-                &mut out_error,
+                &raw mut out_value,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -606,7 +606,7 @@ impl CSUserQueryContext {
             ffi::cs_user_query_context_set_max_ranked_result_count(
                 self.as_ptr(),
                 value as i64,
-                &mut out_error,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {
@@ -626,8 +626,8 @@ impl CSSuggestion {
         let status = unsafe {
             ffi::cs_suggestion_get_localized_attributed_suggestion(
                 self.as_ptr(),
-                &mut out_json,
-                &mut out_error,
+                &raw mut out_json,
+                &raw mut out_error,
             )
         };
         if status != ffi::status::OK {

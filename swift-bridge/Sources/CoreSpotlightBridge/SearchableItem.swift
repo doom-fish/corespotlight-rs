@@ -23,7 +23,7 @@ public func csSearchableItemNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -65,7 +65,7 @@ public func csSearchableItemSetUniqueIdentifier(
     guard let itemPtr, let value else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing searchable item unique identifier")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let item: CSSearchableItem = csBorrow(itemPtr)
     item.uniqueIdentifier = String(cString: value)
@@ -89,7 +89,7 @@ public func csSearchableItemSetDomainIdentifier(
     guard let itemPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing searchable item")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let item: CSSearchableItem = csBorrow(itemPtr)
     item.domainIdentifier = value.map(String.init(cString:))
@@ -106,7 +106,7 @@ public func csSearchableItemSetExpirationDate(
     guard let itemPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing searchable item")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let item: CSSearchableItem = csBorrow(itemPtr)
     item.expirationDate = hasValue == 0 ? nil : Date(timeIntervalSince1970: unixSeconds)
@@ -144,7 +144,7 @@ public func csSearchableItemGetAttributeSet(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -157,7 +157,7 @@ public func csSearchableItemSetAttributeSet(
     guard let itemPtr, let attributeSetPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing searchable item attribute set")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let item: CSSearchableItem = csBorrow(itemPtr)
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
@@ -197,7 +197,7 @@ public func csSearchableItemGetUpdateListenerOptions(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -219,6 +219,6 @@ public func csSearchableItemSetUpdateListenerOptions(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }

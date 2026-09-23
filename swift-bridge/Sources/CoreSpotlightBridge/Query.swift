@@ -101,7 +101,7 @@ public func csSearchQueryNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -122,7 +122,7 @@ public func csSearchQueryNewWithAttributes(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -164,7 +164,7 @@ public func csSearchQueryExecute(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -204,7 +204,7 @@ public func csSearchQueryGetProtectionClasses(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -223,7 +223,7 @@ public func csSearchQuerySetProtectionClasses(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -237,7 +237,7 @@ public func csUserQueryPrepare(_ outError: UnsafeMutablePointer<UnsafeMutablePoi
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -254,7 +254,7 @@ public func csUserQueryPrepareProtectionClasses(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -272,7 +272,7 @@ public func csUserQueryNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -321,7 +321,7 @@ public func csUserQueryExecute(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -350,7 +350,7 @@ public func csUserQueryUserEngagedWithItem(
         throw csBridgeNSError(code: CSR_FAILURE, message: "CSUserQuery item engagement is not bridged by corespotlight-rs v0.2.0")
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -372,6 +372,6 @@ public func csUserQueryUserEngagedWithSuggestion(
         throw csBridgeNSError(code: CSR_FAILURE, message: "CSUserQuery suggestion engagement is not bridged by corespotlight-rs v0.2.0")
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }

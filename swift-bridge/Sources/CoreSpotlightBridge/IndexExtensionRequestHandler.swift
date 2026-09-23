@@ -115,7 +115,7 @@ public func csIndexExtensionRequestHandlerNew(
     guard reindexAll != nil, reindexIdentifiers != nil else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Index extension request handler requires reindex callbacks")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let handler = CSRustIndexExtensionRequestHandler(box: CSRustSearchableIndexDelegateBox(
         context: context,

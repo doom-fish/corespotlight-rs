@@ -282,7 +282,7 @@ public func csSearchableIndexDelegateNew(
     guard reindexAll != nil, reindexIdentifiers != nil else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Searchable index delegate requires reindex callbacks")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let delegate = CSRustSearchableIndexDelegate(box: CSRustSearchableIndexDelegateBox(
         context: context,
@@ -318,7 +318,7 @@ public func csSearchableIndexDelegateSimulateReindexAll(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -342,7 +342,7 @@ public func csSearchableIndexDelegateSimulateReindexIdentifiers(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -362,7 +362,7 @@ public func csSearchableIndexDelegateSimulateDidThrottle(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -382,7 +382,7 @@ public func csSearchableIndexDelegateSimulateDidFinishThrottle(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -415,7 +415,7 @@ public func csSearchableIndexDelegateSimulateDataRequest(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -449,7 +449,7 @@ public func csSearchableIndexDelegateSimulateFileURLRequest(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -477,7 +477,7 @@ public func csSearchableIndexDelegateSimulateSearchableItemsForIdentifiers(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -496,6 +496,6 @@ public func csSearchableIndexDelegateSimulateSearchableItemsDidUpdate(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }

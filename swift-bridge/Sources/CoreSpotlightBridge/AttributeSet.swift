@@ -16,7 +16,7 @@ public func csAttributeSetNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -34,7 +34,7 @@ public func csUserActivityNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -61,7 +61,7 @@ public func csUserActivitySetContentAttributeSet(
     guard let activityPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing user activity")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let activity: NSUserActivity = csBorrow(activityPtr)
     activity.contentAttributeSet = attributeSetPtr.map { ptr in
@@ -91,7 +91,7 @@ public func csAttributeSetSetString(
     guard let attributeSetPtr, let fieldName else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing attribute set string field")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     csSetAttributeValue(attributeSet, fieldName: String(cString: fieldName), value: value.map(String.init(cString:)))
@@ -115,7 +115,7 @@ public func csAttributeSetGetStringArray(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -136,7 +136,7 @@ public func csAttributeSetSetStringArray(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -163,7 +163,7 @@ public func csAttributeSetSetNumber(
     guard let attributeSetPtr, let fieldName else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing attribute set number field")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     csSetNumber(attributeSet, fieldName: String(cString: fieldName), value: value, hasValue: hasValue)
@@ -190,7 +190,7 @@ public func csAttributeSetSetURL(
     guard let attributeSetPtr, let fieldName else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing attribute set URL field")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     csSetURL(attributeSet, fieldName: String(cString: fieldName), value: value)
@@ -214,7 +214,7 @@ public func csAttributeSetGetData(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -235,7 +235,7 @@ public func csAttributeSetSetData(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -261,7 +261,7 @@ public func csAttributeSetSetDate(
     guard let attributeSetPtr, let fieldName else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing attribute set date field")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     csSetDate(attributeSet, fieldName: String(cString: fieldName), value: value, hasValue: hasValue)
@@ -285,7 +285,7 @@ public func csAttributeSetGetDateArray(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -306,7 +306,7 @@ public func csAttributeSetSetDateArray(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -327,7 +327,7 @@ public func csAttributeSetGetPersonArray(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -348,7 +348,7 @@ public func csAttributeSetSetPersonArray(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -369,7 +369,7 @@ public func csAttributeSetGetStringArrayMap(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -390,7 +390,7 @@ public func csAttributeSetSetStringArrayMap(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -404,7 +404,7 @@ public func csAttributeSetSetLocalizedString(
     guard let attributeSetPtr, let fieldName, let localizedStringPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing localized string field")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     let localizedString: CSLocalizedString = csBorrow(localizedStringPtr)
@@ -421,7 +421,7 @@ public func csAttributeSetMoveFrom(
     guard let attributeSetPtr, let sourceAttributeSetPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing attribute set")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let attributeSet: CSSearchableItemAttributeSet = csBorrow(attributeSetPtr)
     let sourceAttributeSet: CSSearchableItemAttributeSet = csBorrow(sourceAttributeSetPtr)
@@ -432,7 +432,7 @@ public func csAttributeSetMoveFrom(
             message: "CSSearchableItemAttributeSet.moveFrom: is unavailable on this SDK"
         )
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     _ = attributeSet.perform(selector, with: sourceAttributeSet)
     return CSR_OK
@@ -456,7 +456,7 @@ public func csAttributeSetSetCustomValue(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -478,7 +478,7 @@ public func csAttributeSetGetCustomValue(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -495,7 +495,7 @@ public func csLocalizedStringNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -523,7 +523,7 @@ public func csCustomAttributeKeyNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -554,7 +554,7 @@ public func csCustomAttributeKeyNewWithOptions(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -615,7 +615,7 @@ public func csPersonNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -641,7 +641,7 @@ public func csPersonGetHandles(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -668,7 +668,7 @@ public func csPersonSetContactIdentifier(
     guard let personPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing person")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let person: CSPerson = csBorrow(personPtr)
     person.contactIdentifier = value.map(String.init(cString:))

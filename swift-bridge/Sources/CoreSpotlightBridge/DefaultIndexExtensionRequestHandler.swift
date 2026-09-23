@@ -91,6 +91,6 @@ public func csDefaultIndexExtensionRequestHandlerGetLastIdentifiers(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }

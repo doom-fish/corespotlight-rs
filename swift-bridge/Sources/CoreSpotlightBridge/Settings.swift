@@ -124,7 +124,7 @@ public func csSearchQueryContextGetFetchAttributes(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -143,7 +143,7 @@ public func csSearchQueryContextSetFetchAttributes(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -162,7 +162,7 @@ public func csSearchQueryContextGetFilterQueries(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -181,7 +181,7 @@ public func csSearchQueryContextSetFilterQueries(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -201,7 +201,7 @@ public func csSearchQueryContextSetKeyboardLanguage(
     guard let contextPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing search query context")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let context: CSSearchQueryContext = csBorrow(contextPtr)
     context.keyboardLanguage = value.map(String.init(cString:))
@@ -224,7 +224,7 @@ public func csSearchQueryContextSetSourceOptions(
     guard let contextPtr else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing search query context")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let context: CSSearchQueryContext = csBorrow(contextPtr)
     context.sourceOptions = CSSearchQueryContext.SourceOptions(rawValue: UInt(value))
@@ -285,7 +285,7 @@ public func csUserQueryContextGetDisableSemanticSearch(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -307,7 +307,7 @@ public func csUserQueryContextSetDisableSemanticSearch(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -357,7 +357,7 @@ public func csUserQueryContextGetMaxRankedResultCount(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -379,7 +379,7 @@ public func csUserQueryContextSetMaxRankedResultCount(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -398,7 +398,7 @@ public func csSuggestionGetLocalizedAttributedSuggestion(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 

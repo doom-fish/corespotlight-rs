@@ -74,7 +74,7 @@ public func csImportExtensionNew(
     guard update != nil else {
         let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Import extension requires an update callback")
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
     let importExtension = CSRustImportExtension(box: CSRustImportExtensionBox(
         context: context,
@@ -102,6 +102,6 @@ public func csImportExtensionSimulateUpdate(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }

@@ -38,7 +38,7 @@ public func csSearchableIndexNew(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -58,7 +58,7 @@ public func csSearchableIndexNewWithProtectionClass(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -85,7 +85,7 @@ public func csSearchableIndexSetDelegate(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -110,7 +110,7 @@ public func csSearchableIndexIndexItems(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -135,7 +135,7 @@ public func csSearchableIndexDeleteIdentifiers(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -160,7 +160,7 @@ public func csSearchableIndexDeleteDomainIdentifiers(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -183,7 +183,7 @@ public func csSearchableIndexDeleteAll(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -204,7 +204,7 @@ public func csSearchableIndexBeginBatch(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -233,7 +233,7 @@ public func csSearchableIndexEndBatchWithClientState(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -270,7 +270,7 @@ public func csSearchableIndexEndBatchWithExpectedClientState(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -304,7 +304,7 @@ public func csSearchableIndexFetchLastClientState(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }
 
@@ -348,6 +348,6 @@ public func csSearchableIndexFetchDataForBundleIdentifier(
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
-        return Int32(error.code)
+        return csStatus(error)
     }
 }

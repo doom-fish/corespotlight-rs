@@ -174,12 +174,34 @@ pub(crate) fn system_time_to_unix_seconds(time: SystemTime) -> Result<f64, CoreS
 }
 
 pub(crate) fn system_time_from_unix_seconds(seconds: f64) -> SystemTime {
-    UNIX_EPOCH + Duration::from_secs_f64(seconds)
+    let offset = Duration::try_from_secs_f64(seconds.abs()).unwrap_or(Duration::ZERO);
+    if seconds.is_sign_negative() {
+        UNIX_EPOCH.checked_sub(offset)
+    } else {
+        UNIX_EPOCH.checked_add(offset)
+    }
+    .unwrap_or(UNIX_EPOCH)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::error_from_payload_json;
+    use std::time::{Duration, UNIX_EPOCH};
+
+    use super::{error_from_payload_json, system_time_from_unix_seconds};
+
+    #[test]
+    fn unix_seconds_before_the_epoch_do_not_panic() {
+        assert_eq!(
+            system_time_from_unix_seconds(-86_400.0),
+            UNIX_EPOCH - Duration::from_secs(86_400)
+        );
+        assert_eq!(
+            system_time_from_unix_seconds(1.5),
+            UNIX_EPOCH + Duration::from_millis(1_500)
+        );
+        assert_eq!(system_time_from_unix_seconds(f64::NAN), UNIX_EPOCH);
+        assert_eq!(system_time_from_unix_seconds(f64::INFINITY), UNIX_EPOCH);
+    }
 
     #[test]
     fn error_payload_json_keeps_domain_and_code() {

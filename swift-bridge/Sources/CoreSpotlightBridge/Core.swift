@@ -60,6 +60,13 @@ func csBorrowAny(_ ptr: UnsafeMutableRawPointer) -> AnyObject {
     return Unmanaged<AnyObject>.fromOpaque(UnsafeRawPointer(typedPointer)).takeUnretainedValue()
 }
 
+func csStatus(_ error: NSError) -> Int32 {
+    guard let code = Int32(exactly: error.code), code != CSR_OK else {
+        return CSR_FAILURE
+    }
+    return code
+}
+
 @inline(__always)
 func csBridgeNSError(code: Int32, message: String) -> NSError {
     NSError(domain: CSR_BRIDGE_ERROR_DOMAIN, code: Int(code), userInfo: [NSLocalizedDescriptionKey: message])

@@ -1,4 +1,4 @@
-# CoreSpotlight coverage (v0.2.1)
+# CoreSpotlight coverage (v0.4.0)
 
 Legend: ✅ implemented and exercised by examples/tests, 🟡 partially implemented or has a runtime caveat, ⏭️ intentionally skipped.
 
@@ -6,20 +6,20 @@ Legend: ✅ implemented and exercised by examples/tests, 🟡 partially implemen
 
 | SDK area | Status | Notes |
 | --- | --- | --- |
-| `CSSearchableIndex` | ✅ | Default/custom indexes, deletion APIs, batching, last-client-state fetch, external-provider fetch, delegate attachment, request-handler attachment |
-| `CSSearchableIndex::endIndexBatch(expectedClientState:newClientState:)` | 🟡 | The current Swift overlay exposed to the bridge only provides `endBatch(withClientState:)`; passing a non-`None` expected state returns a bridge error instead of silently ignoring it |
+| `CSSearchableIndex` | ✅ | Default/custom indexes, deletion APIs, batching, last-client-state fetch, external-provider fetch, delegate attachment, request-handler attachment. Batch misuse (a second `begin`, `end` without an open batch, batching the default index) returns an error instead of raising an Objective-C exception |
+| `CSSearchableIndex::endIndexBatch(expectedClientState:newClientState:)` | ✅ | `end_index_batch_with_expected_client_state` on macOS 15 and later; a mismatch returns `CSIndexErrorCode::MismatchedClientState`. Earlier systems get an error |
 | `CSSearchableItem` | ✅ | Construction, rank comparison, mutable identifiers, expiration dates, `isUpdate`, and `updateListenerOptions` |
 | `CSSearchableItemAttributeSet` | ✅ | Typed string / array / number / URL / data / date / date-array / people / map accessors, common convenience fields, localized strings, people, and custom attribute values |
 | `NSUserActivity (CSSearchableItemAttributeSet)` | ✅ | `contentAttributeSet` attachment and retrieval for Spotlight-backed activities |
 | `CSLocalizedString` | ✅ | Creation and retrieval |
 | `CSPerson` | ✅ | Creation and round-trip support through person-array attribute fields |
 | `CSCustomAttributeKey` | 🟡 | Rust API is exposed, but Apple validates custom key names against the active bundle identifier at runtime; command-line demos may fail to create keys even with syntactically valid names |
-| `CSSearchQuery` | ✅ | Construction, attribute-limited construction, execute, cancel, item counts, protection classes |
-| `CSUserQuery` | 🟡 | Construction, execute, cancel, item/suggestion counts, protection classes; `user_engaged_with_item` and `user_engaged_with_suggestion` currently return a bridge error because the Swift overlay uses opaque `CSUserQuery.Item` / `CSUserQuery.Suggestion` wrappers not yet surfaced to Rust |
+| `CSSearchQuery` | ✅ | Construction, attribute-limited construction, execute (once per query), cancel, item counts, protection classes, and `escape_value` for values interpolated into query strings |
+| `CSUserQuery` | 🟡 | Construction, execute (once per query), cancel, item/suggestion counts, protection classes; `user_engaged_with_item` and `user_engaged_with_suggestion` always return an error, because Core Spotlight crashes when it's given an item or suggestion the query didn't return and the bridge can't check that |
 | `CSSearchQueryContext` | ✅ | Fetch attributes, filter queries, keyboard language, source options |
 | `CSUserQueryContext` | ✅ | Current suggestion, ranked-results toggle, semantic-search toggle, max result/suggestion/ranked counts |
 | `CSSuggestion` | ✅ | Localized attributed suggestion payload, kind, ordering, rank ordering |
-| `CSSearchableIndexDelegate` | ✅ | Reindex, throttle, data/file-provider, searchable-items update callbacks, plus simulation helpers for tests |
+| `CSSearchableIndexDelegate` | ✅ | Reindex (acknowledged through `CSReindexAcknowledgement`), throttle, data/file-provider, searchable-items update callbacks, plus simulation helpers for tests |
 | `CSIndexExtensionRequestHandler` | ✅ | Rust-backed subclass mirroring the delegate callback surface, plus simulation helpers |
 | `CSImportExtension` | ✅ | Rust-backed subclass for `update(_:forFileAt:)`, plus simulation helpers |
 | `DefaultIndexExtensionRequestHandler` | 🟡 | Test/demo helper implemented in the bridge; this is not an Apple SDK type |
@@ -34,12 +34,12 @@ Legend: ✅ implemented and exercised by examples/tests, 🟡 partially implemen
 
 ## Validation
 
-The following checks were used against v0.2.1 while expanding coverage:
+The following checks were run against v0.4.0:
 
 ```bash
-cargo clippy --all-targets -- -D warnings
-cargo test
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-features
 for example in $(find examples -maxdepth 1 -name '*.rs' -exec basename {} .rs \; | sort); do
-  cargo run --example "$example"
+  cargo run --all-features --example "$example"
 done
 ```

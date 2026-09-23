@@ -10,6 +10,10 @@ Audit scope: top-level public CoreSpotlight declarations (classes, protocols, ca
 Filtered out from totals: symbols explicitly unavailable on macOS, such as `CSActionIdentifier`, plus iOS-only members inside otherwise-macOS categories.
 No top-level macOS-deprecated declarations were found in the counted symbol set, so `EXEMPT` is 0.
 
+What the numbers measure: a top-level declaration counts as VERIFIED when the crate wraps it at all. Members aren't counted, so VERIFIED doesn't mean every method or property is bridged. `CSUserQuery` is only partly wrapped: `user_engaged_with_item` and `user_engaged_with_suggestion` always return an error, because Core Spotlight crashes when it's given an item or suggestion the query didn't return. `DefaultIndexExtensionRequestHandler` is a bridge test helper, not an SDK type.
+
+Re-checked on 2026-09-23 against the installed MacOSX26.5.sdk headers: the same top-level declarations. MacOSX27.0.sdk adds `CSSearchableIndexDescription` (macOS 27), which this crate doesn't wrap.
+
 ## 🟢 VERIFIED
 | Symbol | Kind | Header | Wrapped by |
 | --- | --- | --- | --- |
@@ -21,7 +25,7 @@ No top-level macOS-deprecated declarations were found in the counted symbol set,
 | CSSearchableIndex | class | CSSearchableIndex.h | `CSSearchableIndex` |
 | CSSearchableIndex (CSOptionalBatching) | category | CSSearchableIndex.h | `CSSearchableIndex::{begin_index_batch,end_index_batch_with_client_state,fetch_last_client_state}` |
 | CSSearchableIndex (CSExternalProvider) | category | CSSearchableIndex.h | `CSSearchableIndex::fetch_data_for_bundle_identifier` |
-| CSSearchableIndex (CSOptionalBatchingWithExpectedState) | category | CSSearchableIndex.h | `CSSearchableIndex::end_index_batch_with_expected_client_state` (publicly exposed, but the current bridge rejects non-`None` expected state values) |
+| CSSearchableIndex (CSOptionalBatchingWithExpectedState) | category | CSSearchableIndex.h | `CSSearchableIndex::end_index_batch_with_expected_client_state` (macOS 15 and later) |
 | CSSearchableIndexDelegate | protocol | CSSearchableIndex.h | `CSSearchableIndexDelegate`, `CSSearchableIndexDelegateCallbacks` |
 | CSSearchableItemActionType | constant | CSSearchableItem.h | `searchable_item_action_type()` |
 | CSSearchableItemActivityIdentifier | constant | CSSearchableItem.h | `searchable_item_activity_identifier()` |
@@ -37,7 +41,7 @@ No top-level macOS-deprecated declarations were found in the counted symbol set,
 | CSSearchQuery | class | CSSearchQuery.h | `CSSearchQuery::{new,new_with_attributes,execute,cancel,...}` |
 | CSUserInteraction | enum | CSUserQuery.h | `CSUserInteraction` |
 | CSUserQueryContext | class | CSUserQuery.h | `CSUserQueryContext` |
-| CSUserQuery | class | CSUserQuery.h | `CSUserQuery::{prepare,prepare_protection_classes,new,execute,cancel,...}` (the `user_engaged_with_*` helpers are exposed but currently return bridge errors on the command-line bridge) |
+| CSUserQuery | class | CSUserQuery.h | `CSUserQuery::{prepare,prepare_protection_classes,new,execute,cancel,...}` (the `user_engaged_with_*` helpers always return an error) |
 | CSSuggestionKind | enum | CSSuggestion.h | `CSSuggestionKind` |
 | CSSuggestion | class | CSSuggestion.h | `CSSuggestion::{localized_attributed_suggestion,suggestion_kind,compare,compare_by_rank}` |
 | CSSearchableItemAttributeSet | class | CSSearchableItemAttributeSet.h | `CSSearchableItemAttributeSet` |

@@ -6,7 +6,11 @@ GAPS: 0
 EXEMPT: 1
 COVERAGE_PCT: 100.0
 
-Audit methodology: enumerated all public declarations in CoreSpotlight.framework headers (52 macOS-available top-level symbols across constants, enums, option sets, classes, protocols, and 16 categories). Cross-referenced against the crate's Swift bridge (`@_cdecl` thunks) and Rust safe API (`pub` items in `src/`). One symbol (CSActionIdentifier) is iOS-only with `API_UNAVAILABLE(macos)` and properly exempted. All 52 macOS symbols are either directly wrapped in the Rust API or exposed through swift-bridge FFI thunks; no gaps found.
+Audit methodology: enumerated all public declarations in CoreSpotlight.framework headers (52 macOS-available top-level symbols across constants, enums, option sets, classes, protocols, and 16 categories). Cross-referenced against the crate's Swift bridge (`@_cdecl` thunks) and Rust safe API (`pub` items in `src/`). One symbol (CSActionIdentifier) is iOS-only with `API_UNAVAILABLE(macos)` and properly exempted. All 52 macOS symbols are wrapped by the safe Rust API; no gaps found.
+
+What the numbers measure: a top-level declaration counts as VERIFIED when the crate wraps it at all. Members aren't counted, so VERIFIED doesn't mean every method or property is bridged. `CSUserQuery` is only partly wrapped: `user_engaged_with_item` and `user_engaged_with_suggestion` always return an error, because Core Spotlight crashes when it's given an item or suggestion the query didn't return. `DefaultIndexExtensionRequestHandler` is a bridge test helper, not an SDK type.
+
+Re-checked on 2026-09-23 against the installed MacOSX26.5.sdk headers: the same top-level declarations. MacOSX27.0.sdk adds `CSSearchableIndexDescription` (macOS 27), which this crate doesn't wrap.
 
 ## 🟢 VERIFIED
 | Symbol | Kind | Header | Wrapped by |
@@ -35,7 +39,7 @@ Audit methodology: enumerated all public declarations in CoreSpotlight.framework
 | CSSearchQuery | class | CSSearchQuery.h | `CSSearchQuery` |
 | CSUserInteraction | enum | CSUserQuery.h | `CSUserInteraction` |
 | CSUserQueryContext | class | CSUserQuery.h | `CSUserQueryContext` |
-| CSUserQuery | class | CSUserQuery.h | `CSUserQuery` |
+| CSUserQuery | class | CSUserQuery.h | `CSUserQuery` (the `user_engaged_with_*` helpers always return an error) |
 | CSSuggestionKind | enum | CSSuggestion.h | `CSSuggestionKind` |
 | CSSuggestion | class | CSSuggestion.h | `CSSuggestion` |
 | CSSearchableItemAttributeSet | class | CSSearchableItemAttributeSet.h | `CSSearchableItemAttributeSet` |

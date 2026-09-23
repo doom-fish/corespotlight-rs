@@ -1,5 +1,74 @@
 # Changelog
 
+All notable changes to `corespotlight` are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.4.0] - Unreleased
+
+### Security
+
+- The async index and delete APIs no longer read the index, the items or the
+  JSON arguments after the call returns. The Swift bridge decoded them in a
+  `Task` that ran later, so dropping the items before awaiting the future was
+  a use-after-free from safe code. The bridge now retains and copies its
+  inputs before returning, and the JSON C strings are no longer leaked on
+  every call.
+
+### Fixed
+
+- `AsyncCSSearchableIndex::fetch_last_client_state` never returned the stored
+  state: the bridge passed a boxed Swift object where Rust expected a C
+  string, and Rust then freed it with `free`.
+- Async errors keep the `NSError` domain and code.
+- Batch misuse no longer aborts the process. A second `begin_index_batch`,
+  ending a batch that isn't open, and batching the default index return
+  errors instead of raising Objective-C exceptions.
+- `end_index_batch_with_expected_client_state` calls
+  `endIndexBatch(expectedClientState:newClientState:)` on macOS 15 and later
+  instead of rejecting every expected state.
+- `CSSearchQuery::execute` and `CSUserQuery::execute` release their results
+  and clear their handlers on a timeout or error, no longer leak earlier
+  suggestion deliveries, and return an error instead of aborting when a
+  query is executed a second time.
+- Reindex requests are acknowledged only after the Rust callback's work; see
+  Changed.
+- The default index extension request handler's counters and last
+  identifiers are synchronized.
+- Bridge errors with code 0 are no longer reported as success, and codes
+  outside the `Int32` range no longer trap.
+- Dates before 1970 read from attribute sets and item expiration dates no
+  longer panic.
+- The delegate and import-extension trampolines use the shared panic helpers
+  and contain panicking context destructors.
+
+### Changed
+
+- **Breaking:** the reindex callbacks passed to
+  `CSSearchableIndexDelegateCallbacks::new` receive a
+  `CSReindexAcknowledgement` as their last argument. Call `acknowledge` or
+  drop it once the reindex is done; dropping it while panicking doesn't
+  acknowledge. `simulate_reindex_all` and `simulate_reindex_identifiers` wait
+  for the acknowledgement and return an error when the callback finished
+  without acknowledging.
+- **Breaking:** the raw `ffi::CsDelegateReindexAll` and
+  `ffi::CsDelegateReindexIdentifiers` callback types take an acknowledgement
+  pointer.
+- The `doom-fish-utils` requirement is `>=0.4.1, <0.5`.
+- `rust-version` is 1.82 (was 1.76); `unsafe extern` blocks already needed it.
+
+### Added
+
+- `CSSearchQuery::escape_value` for values interpolated into query strings,
+  and warnings in the docs of the query-string APIs.
+- `CSReindexAcknowledgement` and `ffi::cs_reindex_acknowledgement_finish`.
+
+## [0.3.8] - 2026-06-06
+
+- The delegate and import-extension FFI trampolines catch panics from user
+  callbacks instead of unwinding into Swift. Removed the empty bridge header.
+
 ## [0.3.7] - 2026-05-20
 
 - Migrated local `take_string` body to call `doom_fish_utils::ffi_string::take_owned_cstring_c`. Centralises the duplicated FFI take-string pattern fleet-wide. No public API change.

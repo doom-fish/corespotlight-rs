@@ -140,7 +140,11 @@ pub(crate) unsafe fn parse_error_ptr(ptr: *mut c_char) -> CoreSpotlightError {
     }
     let json = CStr::from_ptr(ptr).to_string_lossy().into_owned();
     ffi::cs_string_free(ptr);
-    match serde_json::from_str::<ErrorPayload>(&json) {
+    error_from_payload_json(&json)
+}
+
+pub(crate) fn error_from_payload_json(json: &str) -> CoreSpotlightError {
+    match serde_json::from_str::<ErrorPayload>(json) {
         Ok(payload) => CoreSpotlightError::from_payload(payload),
         Err(error) => CoreSpotlightError::bridge(
             -1,
@@ -171,4 +175,27 @@ pub(crate) fn system_time_to_unix_seconds(time: SystemTime) -> Result<f64, CoreS
 
 pub(crate) fn system_time_from_unix_seconds(seconds: f64) -> SystemTime {
     UNIX_EPOCH + Duration::from_secs_f64(seconds)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::error_from_payload_json;
+
+    #[test]
+    fn error_payload_json_keeps_domain_and_code() {
+        let error = error_from_payload_json(
+            r#"{"domain":"CSIndexErrorDomain","code":-1006,"message":"mismatch"}"#,
+        );
+        assert_eq!(error.domain, "CSIndexErrorDomain");
+        assert_eq!(error.code, -1006);
+        assert_eq!(error.message, "mismatch");
+    }
+
+    #[test]
+    fn unparsable_error_payload_becomes_a_bridge_error() {
+        let error = error_from_payload_json("not json");
+        assert_eq!(error.domain, crate::CORESPOTLIGHT_BRIDGE_ERROR_DOMAIN);
+        assert_eq!(error.code, -1);
+        assert!(error.message.contains("not json"));
+    }
 }

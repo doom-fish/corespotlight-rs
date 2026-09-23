@@ -133,6 +133,13 @@ where
 
 impl CSSearchQuery {
     /// Wraps the `CSSearchQuery` initializer.
+    ///
+    /// `query_string` uses Core Spotlight query syntax. Don't interpolate
+    /// untrusted text into it unescaped: a `"` ends the string literal and a
+    /// `*` is a wildcard, so the text can change what the query matches. Put
+    /// each value inside double quotes after passing it through
+    /// [`CSSearchQuery::escape_value`], for example
+    /// `format!("title == \"{}\"", CSSearchQuery::escape_value(input))`.
     pub fn new(
         query_string: impl AsRef<str>,
         query_context: Option<&CSSearchQueryContext>,
@@ -155,6 +162,9 @@ impl CSSearchQuery {
     }
 
     /// Wraps a convenience initializer for `CSSearchQuery`.
+    ///
+    /// `query_string` uses the same syntax as [`CSSearchQuery::new`]; escape
+    /// interpolated values with [`CSSearchQuery::escape_value`].
     pub fn new_with_attributes<I, S>(
         query_string: impl AsRef<str>,
         attributes: I,
@@ -180,6 +190,18 @@ impl CSSearchQuery {
             return Err(unsafe { error_from_status(status, out_error) });
         }
         unsafe { Self::from_retained_ptr(out_query, "search query") }
+    }
+
+    #[allow(missing_docs)]
+    pub fn escape_value(value: &str) -> String {
+        let mut escaped = String::with_capacity(value.len());
+        for character in value.chars() {
+            if matches!(character, '\\' | '"' | '\'' | '*' | '?') {
+                escaped.push('\\');
+            }
+            escaped.push(character);
+        }
+        escaped
     }
 
     /// Wraps the corresponding `CSSearchQuery` operation.
@@ -411,5 +433,21 @@ impl CSUserQuery {
             return Err(unsafe { error_from_status(status, out_error) });
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CSSearchQuery;
+
+    #[test]
+    fn escape_value_escapes_quotes_backslashes_and_wildcards() {
+        assert_eq!(
+            CSSearchQuery::escape_value(r#"a"b\c*d?e'f"#),
+            r#"a\"b\\c\*d\?e\'f"#
+        );
+        assert_eq!(CSSearchQuery::escape_value("plain text"), "plain text");
+        assert_eq!(CSSearchQuery::escape_value(""), "");
+        assert_eq!(CSSearchQuery::escape_value("\u{201C}é$"), "\u{201C}é$");
     }
 }

@@ -427,6 +427,9 @@ impl CSSearchQueryContext {
     }
 
     /// Wraps the corresponding `CSSearchQueryContext` setter.
+    ///
+    /// Filter queries use Core Spotlight query syntax; escape interpolated
+    /// values with [`crate::CSSearchQuery::escape_value`].
     pub fn set_filter_queries<I, S>(&self, values: I) -> Result<(), CoreSpotlightError>
     where
         I: IntoIterator<Item = S>,

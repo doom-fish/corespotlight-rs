@@ -9,17 +9,11 @@ final class CSRustIndexExtensionRequestHandler: CSIndexExtensionRequestHandler {
     }
 
     override func searchableIndex(_ searchableIndex: CSSearchableIndex, reindexAllSearchableItemsWithAcknowledgementHandler acknowledgementHandler: @escaping () -> Void) {
-        box.reindexAll?(box.context, csRetain(searchableIndex))
-        acknowledgementHandler()
+        csDeliverReindexAll(box, searchableIndex, acknowledgementHandler)
     }
 
     override func searchableIndex(_ searchableIndex: CSSearchableIndex, reindexSearchableItemsWithIdentifiers identifiers: [String], acknowledgementHandler: @escaping () -> Void) {
-        guard let callback = box.reindexIdentifiers, let identifiersJSON = try? csEncodeJSON(identifiers) else {
-            acknowledgementHandler()
-            return
-        }
-        identifiersJSON.withCString { callback(box.context, csRetain(searchableIndex), $0) }
-        acknowledgementHandler()
+        csDeliverReindexIdentifiers(box, searchableIndex, identifiers, acknowledgementHandler)
     }
 
     override func searchableIndexDidThrottle(_ searchableIndex: CSSearchableIndex) {

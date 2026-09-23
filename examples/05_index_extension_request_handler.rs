@@ -4,9 +4,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let index = CSSearchableIndex::new("doom-fish.corespotlight.request-handler-demo")?;
     let handler = CSIndexExtensionRequestHandler::new(
         CSSearchableIndexDelegateCallbacks::new(
-            |_| {},
-            |_, identifiers| {
+            |_, acknowledgement: CSReindexAcknowledgement| acknowledgement.acknowledge(),
+            |_, identifiers, acknowledgement: CSReindexAcknowledgement| {
                 println!("reindex identifiers: {identifiers:?}");
+                acknowledgement.acknowledge();
             },
         )
         .data_for_item(|_, item_identifier, type_identifier| {

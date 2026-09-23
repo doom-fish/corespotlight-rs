@@ -47,7 +47,9 @@ pub use attribute_set::{
     NSUserActivity,
 };
 pub use default_index_extension_request_handler::DefaultIndexExtensionRequestHandler;
-pub use delegate::{CSSearchableIndexDelegate, CSSearchableIndexDelegateCallbacks};
+pub use delegate::{
+    CSReindexAcknowledgement, CSSearchableIndexDelegate, CSSearchableIndexDelegateCallbacks,
+};
 pub use error::{CoreSpotlightError, CORESPOTLIGHT_BRIDGE_ERROR_DOMAIN};
 pub use import_extension::CSImportExtension;
 pub use index::CSSearchableIndex;
@@ -80,7 +82,9 @@ pub mod prelude {
         CustomAttributeValue, NSUserActivity,
     };
     pub use crate::default_index_extension_request_handler::DefaultIndexExtensionRequestHandler;
-    pub use crate::delegate::{CSSearchableIndexDelegate, CSSearchableIndexDelegateCallbacks};
+    pub use crate::delegate::{
+        CSReindexAcknowledgement, CSSearchableIndexDelegate, CSSearchableIndexDelegateCallbacks,
+    };
     pub use crate::error::{CoreSpotlightError, CORESPOTLIGHT_BRIDGE_ERROR_DOMAIN};
     pub use crate::import_extension::CSImportExtension;
     pub use crate::index::CSSearchableIndex;

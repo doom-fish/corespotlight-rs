@@ -14,14 +14,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         CSSearchableIndexDelegateCallbacks::new(
             {
                 let reindex_all_count = Arc::clone(&reindex_all_count);
-                move |_| {
+                move |_, acknowledgement: CSReindexAcknowledgement| {
                     reindex_all_count.fetch_add(1, Ordering::SeqCst);
+                    acknowledgement.acknowledge();
                 }
             },
             {
                 let seen_identifiers = Arc::clone(&seen_identifiers);
-                move |_, identifiers| {
+                move |_, identifiers, acknowledgement: CSReindexAcknowledgement| {
                     seen_identifiers.lock().unwrap().extend(identifiers);
+                    acknowledgement.acknowledge();
                 }
             },
         )

@@ -2,8 +2,8 @@ import CoreSpotlight
 import Foundation
 
 public typealias CSDelegateReleaseContextCallback = @convention(c) (UnsafeMutableRawPointer?) -> Void
-public typealias CSDelegateReindexAllCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Void
-public typealias CSDelegateReindexIdentifiersCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafePointer<CChar>?) -> Void
+public typealias CSDelegateReindexAllCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Void
+public typealias CSDelegateReindexIdentifiersCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Void
 public typealias CSDelegateNotificationCallback = @convention(c) (UnsafeMutableRawPointer?, UnsafeMutableRawPointer?) -> Void
 public typealias CSDelegateDataForItemCallback = @convention(c) (
     UnsafeMutableRawPointer?,
@@ -71,6 +71,92 @@ final class CSRustSearchableIndexDelegateBox {
     }
 }
 
+final class CSAcknowledgementBox {
+    let handler: () -> Void
+
+    init(_ handler: @escaping () -> Void) {
+        self.handler = handler
+    }
+}
+
+@_cdecl("cs_reindex_acknowledgement_finish")
+public func csReindexAcknowledgementFinish(_ acknowledgementPtr: UnsafeMutableRawPointer?, _ acknowledge: Int32) {
+    guard let acknowledgementPtr else {
+        return
+    }
+    let box = Unmanaged<CSAcknowledgementBox>.fromOpaque(acknowledgementPtr).takeRetainedValue()
+    if acknowledge != 0 {
+        box.handler()
+    }
+}
+
+func csDeliverReindexAll(_ box: CSRustSearchableIndexDelegateBox, _ searchableIndex: CSSearchableIndex, _ acknowledgementHandler: @escaping () -> Void) {
+    guard let callback = box.reindexAll else {
+        acknowledgementHandler()
+        return
+    }
+    callback(box.context, csRetain(searchableIndex), csRetain(CSAcknowledgementBox(acknowledgementHandler)))
+}
+
+func csDeliverReindexIdentifiers(_ box: CSRustSearchableIndexDelegateBox, _ searchableIndex: CSSearchableIndex, _ identifiers: [String], _ acknowledgementHandler: @escaping () -> Void) {
+    guard let callback = box.reindexIdentifiers, let identifiersJSON = try? csEncodeJSON(identifiers) else {
+        acknowledgementHandler()
+        return
+    }
+    identifiersJSON.withCString {
+        callback(box.context, csRetain(searchableIndex), $0, csRetain(CSAcknowledgementBox(acknowledgementHandler)))
+    }
+}
+
+final class CSAcknowledgementProbe {
+    private let lock = NSLock()
+    private let semaphore = DispatchSemaphore(value: 0)
+    private var acknowledged = false
+
+    func handler() -> () -> Void {
+        let sentinel = CSAcknowledgementSentinel(self)
+        return { sentinel.acknowledge() }
+    }
+
+    fileprivate func markAcknowledged() {
+        lock.lock()
+        acknowledged = true
+        lock.unlock()
+        semaphore.signal()
+    }
+
+    fileprivate func markReleased() {
+        semaphore.signal()
+    }
+
+    func wait(label: String) throws {
+        if semaphore.wait(timeout: .now() + .seconds(30)) == .timedOut {
+            throw csBridgeNSError(code: CSR_TIMED_OUT, message: "Timed out waiting for the \(label) acknowledgement")
+        }
+        lock.lock()
+        defer { lock.unlock() }
+        guard acknowledged else {
+            throw csBridgeNSError(code: CSR_FAILURE, message: "The \(label) callback finished without acknowledging")
+        }
+    }
+}
+
+private final class CSAcknowledgementSentinel {
+    let probe: CSAcknowledgementProbe
+
+    init(_ probe: CSAcknowledgementProbe) {
+        self.probe = probe
+    }
+
+    func acknowledge() {
+        probe.markAcknowledged()
+    }
+
+    deinit {
+        probe.markReleased()
+    }
+}
+
 final class CSRustSearchableIndexDelegate: NSObject, CSSearchableIndexDelegate {
     let box: CSRustSearchableIndexDelegateBox
 
@@ -79,15 +165,11 @@ final class CSRustSearchableIndexDelegate: NSObject, CSSearchableIndexDelegate {
     }
 
     func searchableIndex(_ searchableIndex: CSSearchableIndex, reindexAllSearchableItemsWithAcknowledgementHandler acknowledgementHandler: @escaping () -> Void) {
-        box.reindexAll?(box.context, csRetain(searchableIndex))
-        acknowledgementHandler()
+        csDeliverReindexAll(box, searchableIndex, acknowledgementHandler)
     }
 
     func searchableIndex(_ searchableIndex: CSSearchableIndex, reindexSearchableItemsWithIdentifiers identifiers: [String], acknowledgementHandler: @escaping () -> Void) {
-        if let callback = box.reindexIdentifiers, let identifiersJSON = try? csEncodeJSON(identifiers) {
-            identifiersJSON.withCString { callback(box.context, csRetain(searchableIndex), $0) }
-        }
-        acknowledgementHandler()
+        csDeliverReindexIdentifiers(box, searchableIndex, identifiers, acknowledgementHandler)
     }
 
     func searchableIndexDidThrottle(_ searchableIndex: CSSearchableIndex) {
@@ -230,7 +312,9 @@ public func csSearchableIndexDelegateSimulateReindexAll(
         }
         let delegate = try csDelegateObject(delegatePtr)
         let index: CSSearchableIndex = csBorrow(indexPtr)
-        delegate.searchableIndex(index, reindexAllSearchableItemsWithAcknowledgementHandler: {})
+        let probe = CSAcknowledgementProbe()
+        delegate.searchableIndex(index, reindexAllSearchableItemsWithAcknowledgementHandler: probe.handler())
+        try probe.wait(label: "reindex-all")
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
@@ -252,7 +336,9 @@ public func csSearchableIndexDelegateSimulateReindexIdentifiers(
         let delegate = try csDelegateObject(delegatePtr)
         let index: CSSearchableIndex = csBorrow(indexPtr)
         let identifiers = try csDecodeJSON(identifiersJSON, as: [String].self)
-        delegate.searchableIndex(index, reindexSearchableItemsWithIdentifiers: identifiers, acknowledgementHandler: {})
+        let probe = CSAcknowledgementProbe()
+        delegate.searchableIndex(index, reindexSearchableItemsWithIdentifiers: identifiers, acknowledgementHandler: probe.handler())
+        try probe.wait(label: "reindex-identifiers")
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)

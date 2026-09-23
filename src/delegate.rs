@@ -1,11 +1,12 @@
 //! Wrappers for `CSSearchableIndexDelegate` and Rust callback builders.
 
 use core::ffi::{c_char, c_void};
+use core::ptr::NonNull;
 use std::ffi::CStr;
 
 use serde::Serialize;
 
-use doom_fish_utils::panic_safe::catch_user_panic;
+use doom_fish_utils::panic_safe::{catch_user_panic, catch_user_panic_result};
 
 use crate::error::{CoreSpotlightError, ErrorPayload};
 use crate::ffi;
@@ -22,8 +23,36 @@ unsafe extern "C" {
     fn strdup(value: *const c_char) -> *mut c_char;
 }
 
-type ReindexAllFn = dyn Fn(CSSearchableIndex) + Send + Sync + 'static;
-type ReindexIdentifiersFn = dyn Fn(CSSearchableIndex, Vec<String>) + Send + Sync + 'static;
+#[allow(missing_docs)]
+#[derive(Debug)]
+pub struct CSReindexAcknowledgement {
+    ptr: NonNull<c_void>,
+}
+
+unsafe impl Send for CSReindexAcknowledgement {}
+
+impl CSReindexAcknowledgement {
+    unsafe fn from_raw(ptr: *mut c_void) -> Option<Self> {
+        NonNull::new(ptr).map(|ptr| Self { ptr })
+    }
+
+    #[allow(missing_docs)]
+    pub fn acknowledge(self) {
+        let this = core::mem::ManuallyDrop::new(self);
+        unsafe { ffi::cs_reindex_acknowledgement_finish(this.ptr.as_ptr(), 1) };
+    }
+}
+
+impl Drop for CSReindexAcknowledgement {
+    fn drop(&mut self) {
+        let acknowledge = i32::from(!std::thread::panicking());
+        unsafe { ffi::cs_reindex_acknowledgement_finish(self.ptr.as_ptr(), acknowledge) };
+    }
+}
+
+type ReindexAllFn = dyn Fn(CSSearchableIndex, CSReindexAcknowledgement) + Send + Sync + 'static;
+type ReindexIdentifiersFn =
+    dyn Fn(CSSearchableIndex, Vec<String>, CSReindexAcknowledgement) + Send + Sync + 'static;
 type NotificationFn = dyn Fn(CSSearchableIndex) + Send + Sync + 'static;
 type DataForItemFn = dyn Fn(CSSearchableIndex, &str, &str) -> Result<Option<Vec<u8>>, CoreSpotlightError>
     + Send
@@ -55,8 +84,8 @@ impl CSSearchableIndexDelegateCallbacks {
     /// Wraps the `CSSearchableIndexDelegate` initializer.
     pub fn new<R1, R2>(reindex_all: R1, reindex_identifiers: R2) -> Self
     where
-        R1: Fn(CSSearchableIndex) + Send + Sync + 'static,
-        R2: Fn(CSSearchableIndex, Vec<String>) + Send + Sync + 'static,
+        R1: Fn(CSSearchableIndex, CSReindexAcknowledgement) + Send + Sync + 'static,
+        R2: Fn(CSSearchableIndex, Vec<String>, CSReindexAcknowledgement) + Send + Sync + 'static,
     {
         Self {
             reindex_all: Box::new(reindex_all),
@@ -167,6 +196,13 @@ fn write_json_payload<T: Serialize>(
     Ok(())
 }
 
+fn status_for(error: &CoreSpotlightError) -> i32 {
+    i32::try_from(error.code)
+        .ok()
+        .filter(|code| *code != ffi::status::OK)
+        .unwrap_or(ffi::status::FAILURE)
+}
+
 fn write_error_payload(error: &CoreSpotlightError, out_error: *mut *mut c_char) {
     if out_error.is_null() {
         return;
@@ -219,40 +255,52 @@ pub(crate) unsafe extern "C" fn release_delegate_context(context: *mut c_void) {
     if context.is_null() {
         return;
     }
-    drop(Box::from_raw(
-        context.cast::<SearchableIndexDelegateState>(),
-    ));
+    catch_user_panic("release_delegate_context", || {
+        drop(Box::from_raw(
+            context.cast::<SearchableIndexDelegateState>(),
+        ));
+    });
 }
 
-pub(crate) unsafe extern "C" fn delegate_reindex_all(context: *mut c_void, index_ptr: *mut c_void) {
-    if context.is_null() || index_ptr.is_null() {
+pub(crate) unsafe extern "C" fn delegate_reindex_all(
+    context: *mut c_void,
+    index_ptr: *mut c_void,
+    acknowledgement: *mut c_void,
+) {
+    let acknowledgement = CSReindexAcknowledgement::from_raw(acknowledgement);
+    let index = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate index").ok();
+    let (Some(index), Some(acknowledgement)) = (index, acknowledgement) else {
+        return;
+    };
+    if context.is_null() {
         return;
     }
     let state = state_from_context(context);
-    if let Ok(index) = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate index") {
-        catch_user_panic("delegate_reindex_all", || {
-            (state.callbacks.reindex_all)(index);
-        });
-    }
+    catch_user_panic("delegate_reindex_all", || {
+        (state.callbacks.reindex_all)(index, acknowledgement);
+    });
 }
 
 pub(crate) unsafe extern "C" fn delegate_reindex_identifiers(
     context: *mut c_void,
     index_ptr: *mut c_void,
     identifiers_json: *const c_char,
+    acknowledgement: *mut c_void,
 ) {
-    if context.is_null() || index_ptr.is_null() {
+    let acknowledgement = CSReindexAcknowledgement::from_raw(acknowledgement);
+    let index = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate index").ok();
+    let (Some(index), Some(acknowledgement)) = (index, acknowledgement) else {
+        return;
+    };
+    if context.is_null() {
         return;
     }
     let state = state_from_context(context);
-    let Ok(index) = CSSearchableIndex::from_retained_ptr(index_ptr, "delegate index") else {
-        return;
-    };
     let Ok(identifiers) = identifiers_from_json(identifiers_json, "delegate identifiers") else {
         return;
     };
     catch_user_panic("delegate_reindex_identifiers", || {
-        (state.callbacks.reindex_identifiers)(index, identifiers);
+        (state.callbacks.reindex_identifiers)(index, identifiers, acknowledgement);
     });
 }
 
@@ -309,7 +357,7 @@ pub(crate) unsafe extern "C" fn delegate_data_for_item(
     let Some(callback) = state.callbacks.data_for_item.as_ref() else {
         return ffi::status::OK;
     };
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let result = catch_user_panic_result("delegate_data_for_item", || {
         let index =
             unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate data index")? };
         let item_identifier = if item_identifier.is_null() {
@@ -338,8 +386,8 @@ pub(crate) unsafe extern "C" fn delegate_data_for_item(
         };
         let data = callback(index, item_identifier, type_identifier)?;
         write_json_payload(&data.unwrap_or_default(), "delegate data payload", out_json)
-    }))
-    .unwrap_or_else(|_| {
+    })
+    .unwrap_or_else(|| {
         Err(CoreSpotlightError::bridge(
             i64::from(ffi::status::FAILURE),
             "delegate data callback panicked",
@@ -349,7 +397,7 @@ pub(crate) unsafe extern "C" fn delegate_data_for_item(
         Ok(()) => ffi::status::OK,
         Err(error) => {
             write_error_payload(&error, out_error);
-            error.code as i32
+            status_for(&error)
         }
     }
 }
@@ -370,7 +418,7 @@ pub(crate) unsafe extern "C" fn delegate_file_url_for_item(
     let Some(callback) = state.callbacks.file_url_for_item.as_ref() else {
         return ffi::status::OK;
     };
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let result = catch_user_panic_result("delegate_file_url_for_item", || {
         let index =
             unsafe { CSSearchableIndex::from_retained_ptr(index_ptr, "delegate file url index")? };
         let item_identifier = if item_identifier.is_null() {
@@ -407,8 +455,8 @@ pub(crate) unsafe extern "C" fn delegate_file_url_for_item(
             };
         }
         Ok(())
-    }))
-    .unwrap_or_else(|_| {
+    })
+    .unwrap_or_else(|| {
         Err(CoreSpotlightError::bridge(
             i64::from(ffi::status::FAILURE),
             "delegate file URL callback panicked",
@@ -418,7 +466,7 @@ pub(crate) unsafe extern "C" fn delegate_file_url_for_item(
         Ok(()) => ffi::status::OK,
         Err(error) => {
             write_error_payload(&error, out_error);
-            error.code as i32
+            status_for(&error)
         }
     }
 }
@@ -436,7 +484,7 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_for_identifiers(
     let Some(callback) = state.callbacks.searchable_items_for_identifiers.as_ref() else {
         return ffi::status::OK;
     };
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let result = catch_user_panic_result("delegate_searchable_items_for_identifiers", || {
         let identifiers =
             identifiers_from_json(identifiers_json, "delegate searchable items identifiers")?;
         let items = callback(identifiers)?;
@@ -447,8 +495,8 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_for_identifiers(
             }
         }
         Ok(())
-    }))
-    .unwrap_or_else(|_| {
+    })
+    .unwrap_or_else(|| {
         Err(CoreSpotlightError::bridge(
             i64::from(ffi::status::FAILURE),
             "delegate searchable items callback panicked",
@@ -458,7 +506,7 @@ pub(crate) unsafe extern "C" fn delegate_searchable_items_for_identifiers(
         Ok(()) => ffi::status::OK,
         Err(error) => {
             write_error_payload(&error, out_error);
-            error.code as i32
+            status_for(&error)
         }
     }
 }

@@ -22,14 +22,16 @@ fn request_handler_simulation_invokes_registered_callbacks() -> Result<(), Box<d
         CSSearchableIndexDelegateCallbacks::new(
             {
                 let reindex_all_count = Arc::clone(&reindex_all_count);
-                move |_| {
+                move |_, acknowledgement: CSReindexAcknowledgement| {
                     reindex_all_count.fetch_add(1, Ordering::SeqCst);
+                    acknowledgement.acknowledge();
                 }
             },
             {
                 let reindex_identifiers = Arc::clone(&reindex_identifiers);
-                move |_, identifiers| {
+                move |_, identifiers, acknowledgement: CSReindexAcknowledgement| {
                     reindex_identifiers.lock().unwrap().extend(identifiers);
+                    acknowledgement.acknowledge();
                 }
             },
         )

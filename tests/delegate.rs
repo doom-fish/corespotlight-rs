@@ -3,9 +3,11 @@
 mod common;
 
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
     Arc, Mutex,
 };
+use std::thread;
+use std::time::Duration;
 
 use common::{sample_index, sample_item};
 use corespotlight::prelude::*;
@@ -24,14 +26,16 @@ fn delegate_simulation_invokes_registered_callbacks() -> Result<(), Box<dyn std:
         CSSearchableIndexDelegateCallbacks::new(
             {
                 let reindex_all_count = Arc::clone(&reindex_all_count);
-                move |_| {
+                move |_, acknowledgement: CSReindexAcknowledgement| {
                     reindex_all_count.fetch_add(1, Ordering::SeqCst);
+                    acknowledgement.acknowledge();
                 }
             },
             {
                 let reindex_identifiers = Arc::clone(&reindex_identifiers);
-                move |_, identifiers| {
+                move |_, identifiers, acknowledgement: CSReindexAcknowledgement| {
                     reindex_identifiers.lock().unwrap().extend(identifiers);
+                    acknowledgement.acknowledge();
                 }
             },
         )
@@ -116,5 +120,45 @@ fn delegate_simulation_invokes_registered_callbacks() -> Result<(), Box<dyn std:
     let (_, sample_item) = sample_item("delegate-updated", "Updated item")?;
     delegate.simulate_searchable_items_did_update(&[sample_item])?;
     assert!(did_update_count.load(Ordering::SeqCst) >= initial_did_update + 3);
+    Ok(())
+}
+
+#[test]
+fn reindex_simulation_waits_for_a_deferred_acknowledgement(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let index = sample_index("delegate-deferred")?;
+    let finished = Arc::new(AtomicBool::new(false));
+    let delegate = CSSearchableIndexDelegate::new(CSSearchableIndexDelegateCallbacks::new(
+        {
+            let finished = Arc::clone(&finished);
+            move |_, acknowledgement: CSReindexAcknowledgement| {
+                let finished = Arc::clone(&finished);
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_millis(200));
+                    finished.store(true, Ordering::SeqCst);
+                    acknowledgement.acknowledge();
+                });
+            }
+        },
+        |_, _, acknowledgement: CSReindexAcknowledgement| drop(acknowledgement),
+    ))?;
+
+    delegate.simulate_reindex_all(&index)?;
+    assert!(finished.load(Ordering::SeqCst));
+    delegate.simulate_reindex_identifiers(&index, ["one"])?;
+    Ok(())
+}
+
+#[test]
+fn a_panicking_reindex_callback_does_not_acknowledge() -> Result<(), Box<dyn std::error::Error>> {
+    let index = sample_index("delegate-panic")?;
+    let delegate = CSSearchableIndexDelegate::new(CSSearchableIndexDelegateCallbacks::new(
+        |_, _acknowledgement: CSReindexAcknowledgement| panic!("reindex failed"),
+        |_, _, acknowledgement: CSReindexAcknowledgement| acknowledgement.acknowledge(),
+    ))?;
+
+    let error = delegate.simulate_reindex_all(&index).unwrap_err();
+    assert!(error.message.contains("without acknowledging"), "{error}");
+    delegate.simulate_reindex_identifiers(&index, ["one"])?;
     Ok(())
 }

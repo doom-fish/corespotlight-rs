@@ -3,6 +3,8 @@
 use core::ffi::{c_char, c_void};
 use std::ffi::CStr;
 
+use doom_fish_utils::panic_safe::{catch_user_panic, catch_user_panic_result};
+
 use crate::attribute_set::CSSearchableItemAttributeSet;
 use crate::error::{CoreSpotlightError, ErrorPayload};
 use crate::ffi;
@@ -61,7 +63,9 @@ pub(crate) unsafe extern "C" fn release_import_extension_context(context: *mut c
     if context.is_null() {
         return;
     }
-    drop(Box::from_raw(context.cast::<ImportExtensionState>()));
+    catch_user_panic("release_import_extension_context", || {
+        drop(Box::from_raw(context.cast::<ImportExtensionState>()));
+    });
 }
 
 pub(crate) unsafe extern "C" fn import_extension_update(
@@ -70,7 +74,8 @@ pub(crate) unsafe extern "C" fn import_extension_update(
     content_url: *const c_char,
     out_error: *mut *mut c_char,
 ) -> i32 {
-    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
+    let result = catch_user_panic_result(
+        "import_extension_update",
         || -> Result<(), CoreSpotlightError> {
             if context.is_null() || attributes_ptr.is_null() || content_url.is_null() {
                 return Err(CoreSpotlightError::bridge(
@@ -95,8 +100,8 @@ pub(crate) unsafe extern "C" fn import_extension_update(
                 })?;
             (state.update)(attributes, content_url)
         },
-    ))
-    .unwrap_or_else(|_| {
+    )
+    .unwrap_or_else(|| {
         Err(CoreSpotlightError::bridge(
             i64::from(ffi::status::FAILURE),
             "import extension update callback panicked",

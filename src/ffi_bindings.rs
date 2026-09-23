@@ -1,9 +1,14 @@
 use core::ffi::{c_char, c_void};
 
 pub type CsDelegateReleaseContext = unsafe extern "C" fn(context: *mut c_void);
-pub type CsDelegateReindexAll = unsafe extern "C" fn(context: *mut c_void, index: *mut c_void);
-pub type CsDelegateReindexIdentifiers =
-    unsafe extern "C" fn(context: *mut c_void, index: *mut c_void, identifiers_json: *const c_char);
+pub type CsDelegateReindexAll =
+    unsafe extern "C" fn(context: *mut c_void, index: *mut c_void, acknowledgement: *mut c_void);
+pub type CsDelegateReindexIdentifiers = unsafe extern "C" fn(
+    context: *mut c_void,
+    index: *mut c_void,
+    identifiers_json: *const c_char,
+    acknowledgement: *mut c_void,
+);
 pub type CsDelegateNotification = unsafe extern "C" fn(context: *mut c_void, index: *mut c_void);
 pub type CsDelegateDataForItem = unsafe extern "C" fn(
     context: *mut c_void,
@@ -41,6 +46,7 @@ extern "C" {
     pub fn cs_string_free(s: *mut c_char);
     pub fn cs_retain_object(ptr: *mut c_void) -> *mut c_void;
     pub fn cs_release_object(ptr: *mut c_void);
+    pub fn cs_reindex_acknowledgement_finish(acknowledgement: *mut c_void, acknowledge: i32);
 
     pub fn cs_searchable_index_is_indexing_available() -> i32;
     pub fn cs_searchable_index_default_searchable_index(

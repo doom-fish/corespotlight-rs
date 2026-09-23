@@ -14,7 +14,12 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "CoreSpotlightObjCBridge",
+            path: "Sources/CoreSpotlightObjCBridge",
+            publicHeadersPath: "include"),
+        .target(
             name: "CoreSpotlightBridge",
+            dependencies: ["CoreSpotlightObjCBridge"],
             path: "Sources/CoreSpotlightBridge")
     ]
 )

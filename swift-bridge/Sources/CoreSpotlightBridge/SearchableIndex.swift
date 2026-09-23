@@ -1,4 +1,5 @@
 import CoreSpotlight
+import CoreSpotlightObjCBridge
 import Foundation
 
 private func csClientState(from json: UnsafePointer<CChar>?) throws -> Data {
@@ -191,14 +192,20 @@ public func csSearchableIndexBeginBatch(
     _ indexPtr: UnsafeMutableRawPointer?,
     _ outError: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?
 ) -> Int32 {
-    guard let indexPtr else {
-        let error = csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing searchable index")
+    do {
+        guard let indexPtr else {
+            throw csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing searchable index")
+        }
+        let index: CSSearchableIndex = csBorrow(indexPtr)
+        var exceptionError: NSError?
+        guard CSXTryBeginIndexBatch(index, &exceptionError) else {
+            throw exceptionError ?? csBridgeNSError(code: CSR_FAILURE, message: "beginIndexBatch failed")
+        }
+        return CSR_OK
+    } catch let error as NSError {
         csWriteError(error, to: outError)
         return Int32(error.code)
     }
-    let index: CSSearchableIndex = csBorrow(indexPtr)
-    index.beginBatch()
-    return CSR_OK
 }
 
 @_cdecl("cs_searchable_index_end_batch_with_client_state")
@@ -215,9 +222,13 @@ public func csSearchableIndexEndBatchWithClientState(
         let index: CSSearchableIndex = csBorrow(indexPtr)
         let clientState = try csClientState(from: clientStateJSON)
         try csAwaitCompletion(label: "endIndexBatchWithClientState", timeoutSeconds: timeoutSeconds) { completion in
-            index.endBatch(withClientState: clientState, completionHandler: { error in
+            var exceptionError: NSError?
+            let started = CSXTryEndIndexBatch(index, clientState, { error in
                 completion(error as NSError?)
-            })
+            }, &exceptionError)
+            if !started {
+                completion(exceptionError ?? csBridgeNSError(code: CSR_FAILURE, message: "endIndexBatch failed"))
+            }
         }
         return CSR_OK
     } catch let error as NSError {
@@ -246,14 +257,15 @@ public func csSearchableIndexEndBatchWithExpectedClientState(
         }
         let index: CSSearchableIndex = csBorrow(indexPtr)
         let expectedClientState = try expectedClientStateJSON.map { try csClientState(from: $0) }
-        guard expectedClientState == nil else {
-            throw csBridgeNSError(code: CSR_FAILURE, message: "endIndexBatch(expectedClientState:newClientState:) is not exposed by the current Swift overlay")
-        }
         let newClientState = try csClientState(from: newClientStateJSON)
         try csAwaitCompletion(label: "endIndexBatchWithExpectedClientState", timeoutSeconds: timeoutSeconds) { completion in
-            index.endBatch(withClientState: newClientState, completionHandler: { error in
+            var exceptionError: NSError?
+            let started = CSXTryEndIndexBatchWithExpectedClientState(index, expectedClientState, newClientState, { error in
                 completion(error as NSError?)
-            })
+            }, &exceptionError)
+            if !started {
+                completion(exceptionError ?? csBridgeNSError(code: CSR_FAILURE, message: "endIndexBatch failed"))
+            }
         }
         return CSR_OK
     } catch let error as NSError {

@@ -44,3 +44,9 @@ func csSuggestions(from json: UnsafePointer<CChar>?) throws -> [CSSuggestion] {
 func csRetainedSuggestionPointers(_ suggestions: [CSSuggestion]) -> [UInt64] {
     suggestions.map { UInt64(UInt(bitPattern: csRetain($0))) }
 }
+
+func csReleaseRetainedPointers(_ pointers: [UInt64]) {
+    for pointer in pointers {
+        csReleaseObject(UnsafeMutableRawPointer(bitPattern: UInt(pointer)))
+    }
+}

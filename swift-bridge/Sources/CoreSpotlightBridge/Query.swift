@@ -1,5 +1,80 @@
 import CoreSpotlight
+import CoreSpotlightObjCBridge
 import Foundation
+
+private final class CSQueryRun {
+    private let lock = NSLock()
+    private let semaphore = DispatchSemaphore(value: 0)
+    private var open = true
+    private var items: [CSSearchableItem] = []
+    private var suggestions: [CSSuggestion] = []
+    private var completionError: NSError?
+
+    func append(_ newItems: [CSSearchableItem]) {
+        lock.lock()
+        defer { lock.unlock() }
+        if open {
+            items.append(contentsOf: newItems)
+        }
+    }
+
+    func replaceSuggestions(_ newSuggestions: [CSSuggestion]) {
+        lock.lock()
+        defer { lock.unlock() }
+        if open {
+            suggestions = newSuggestions
+        }
+    }
+
+    func complete(_ error: Error?) {
+        lock.lock()
+        if open {
+            completionError = error as NSError?
+        }
+        lock.unlock()
+        semaphore.signal()
+    }
+
+    func wait(timeoutSeconds: Int32) -> Bool {
+        semaphore.wait(timeout: .now() + .seconds(Int(timeoutSeconds))) != .timedOut
+    }
+
+    func close() -> (items: [CSSearchableItem], suggestions: [CSSuggestion], error: NSError?) {
+        lock.lock()
+        defer { lock.unlock() }
+        open = false
+        let result = (items, suggestions, completionError)
+        items = []
+        suggestions = []
+        completionError = nil
+        return result
+    }
+}
+
+private func csRunQuery(_ query: CSSearchQuery, run: CSQueryRun, label: String, timeoutSeconds: Int32) throws -> (items: [CSSearchableItem], suggestions: [CSSuggestion]) {
+    var exceptionError: NSError?
+    let started = CSXTryStartQuery(query, &exceptionError)
+    let finished = started && run.wait(timeoutSeconds: timeoutSeconds)
+    if started && !finished {
+        query.cancel()
+    }
+    query.foundItemsHandler = nil
+    query.completionHandler = nil
+    if let userQuery = query as? CSUserQuery {
+        userQuery.foundSuggestionsHandler = nil
+    }
+    let result = run.close()
+    guard started else {
+        throw exceptionError ?? csBridgeNSError(code: CSR_FAILURE, message: "Failed to start \(label)")
+    }
+    guard finished else {
+        throw csBridgeNSError(code: CSR_TIMED_OUT, message: "Timed out waiting for \(label)")
+    }
+    if let error = result.error {
+        throw error
+    }
+    return (result.items, result.suggestions)
+}
 
 private func csProtectionClasses(from json: UnsafePointer<CChar>?) throws -> [FileProtectionType] {
     try csDecodeJSON(json, as: [String].self).map(FileProtectionType.init(rawValue:))
@@ -63,32 +138,29 @@ public func csSearchQueryExecute(
             throw csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing search query")
         }
         let query: CSSearchQuery = csBorrow(queryPtr)
-        var retainedItems: [UInt64] = []
-        let semaphore = DispatchSemaphore(value: 0)
-        var completionError: NSError?
-        query.foundItemsHandler = { items in
-            retainedItems.append(contentsOf: csRetainedItemPointers(items))
+        let run = CSQueryRun()
+        query.foundItemsHandler = { [run] items in
+            run.append(items)
         }
-        query.completionHandler = { error in
-            completionError = error as NSError?
-            semaphore.signal()
+        query.completionHandler = { [run] error in
+            run.complete(error)
         }
-        query.start()
-        if semaphore.wait(timeout: .now() + .seconds(Int(timeoutSeconds))) == .timedOut {
-            query.cancel()
-            throw csBridgeNSError(code: CSR_TIMED_OUT, message: "Timed out waiting for CSSearchQuery")
+        let result = try csRunQuery(query, run: run, label: "CSSearchQuery", timeoutSeconds: timeoutSeconds)
+        let foundItemCount = UInt64(query.foundItemCount)
+        let cancelled = query.isCancelled
+        let itemPointers = csRetainedItemPointers(result.items)
+        let json: String
+        do {
+            json = try csEncodeJSON(CSSearchQueryExecutionPayload(
+                itemPointers: itemPointers,
+                foundItemCount: foundItemCount,
+                cancelled: cancelled
+            ))
+        } catch {
+            csReleaseRetainedPointers(itemPointers)
+            throw error
         }
-        if let completionError {
-            throw completionError
-        }
-        let payload = CSSearchQueryExecutionPayload(
-            itemPointers: retainedItems,
-            foundItemCount: UInt64(query.foundItemCount),
-            cancelled: query.isCancelled
-        )
-        outJSON?.pointee = csCString(try csEncodeJSON(payload))
-        query.foundItemsHandler = nil
-        query.completionHandler = nil
+        outJSON?.pointee = csCString(json)
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
@@ -216,39 +288,36 @@ public func csUserQueryExecute(
             throw csBridgeNSError(code: CSR_INVALID_ARGUMENT, message: "Missing user query")
         }
         let query: CSUserQuery = csBorrow(queryPtr)
-        var retainedItems: [UInt64] = []
-        var retainedSuggestions: [UInt64] = []
-        let semaphore = DispatchSemaphore(value: 0)
-        var completionError: NSError?
-        query.foundItemsHandler = { items in
-            retainedItems.append(contentsOf: csRetainedItemPointers(items))
+        let run = CSQueryRun()
+        query.foundItemsHandler = { [run] items in
+            run.append(items)
         }
-        query.foundSuggestionsHandler = { suggestions in
-            retainedSuggestions = csRetainedSuggestionPointers(suggestions)
+        query.foundSuggestionsHandler = { [run] suggestions in
+            run.replaceSuggestions(suggestions)
         }
-        query.completionHandler = { error in
-            completionError = error as NSError?
-            semaphore.signal()
+        query.completionHandler = { [run] error in
+            run.complete(error)
         }
-        query.start()
-        if semaphore.wait(timeout: .now() + .seconds(Int(timeoutSeconds))) == .timedOut {
-            query.cancel()
-            throw csBridgeNSError(code: CSR_TIMED_OUT, message: "Timed out waiting for CSUserQuery")
+        let result = try csRunQuery(query, run: run, label: "CSUserQuery", timeoutSeconds: timeoutSeconds)
+        let foundItemCount = UInt64(query.foundItemCount)
+        let foundSuggestionCount = UInt64(clamping: query.foundSuggestionCount)
+        let cancelled = query.isCancelled
+        let itemPointers = csRetainedItemPointers(result.items)
+        let suggestionPointers = csRetainedSuggestionPointers(result.suggestions)
+        let json: String
+        do {
+            json = try csEncodeJSON(CSUserQueryExecutionPayload(
+                itemPointers: itemPointers,
+                foundItemCount: foundItemCount,
+                suggestionPointers: suggestionPointers,
+                foundSuggestionCount: foundSuggestionCount,
+                cancelled: cancelled
+            ))
+        } catch {
+            csReleaseRetainedPointers(itemPointers + suggestionPointers)
+            throw error
         }
-        if let completionError {
-            throw completionError
-        }
-        let payload = CSUserQueryExecutionPayload(
-            itemPointers: retainedItems,
-            foundItemCount: UInt64(query.foundItemCount),
-            suggestionPointers: retainedSuggestions,
-            foundSuggestionCount: UInt64(query.foundSuggestionCount),
-            cancelled: query.isCancelled
-        )
-        outJSON?.pointee = csCString(try csEncodeJSON(payload))
-        query.foundItemsHandler = nil
-        query.foundSuggestionsHandler = nil
-        query.completionHandler = nil
+        outJSON?.pointee = csCString(json)
         return CSR_OK
     } catch let error as NSError {
         csWriteError(error, to: outError)
@@ -260,7 +329,7 @@ public func csUserQueryExecute(
 public func csUserQueryFoundSuggestionCount(_ queryPtr: UnsafeMutableRawPointer?) -> UInt64 {
     guard let queryPtr else { return 0 }
     let query: CSUserQuery = csBorrow(queryPtr)
-    return UInt64(query.foundSuggestionCount)
+    return UInt64(clamping: query.foundSuggestionCount)
 }
 
 @_cdecl("cs_user_query_user_engaged_with_item")

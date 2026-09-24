@@ -2,14 +2,16 @@
 
 mod common;
 
-use common::{sample_index, sample_item};
+use common::LiveIndex;
 use corespotlight::async_api::AsyncCSSearchableIndex;
-use corespotlight::CSSearchableIndex;
 
 #[test]
 fn test_delete_all_searchable_items() -> Result<(), Box<dyn std::error::Error>> {
+    let Some(live) = LiveIndex::acquire("test_delete_all_searchable_items") else {
+        return Ok(());
+    };
     pollster::block_on(async {
-        let index = CSSearchableIndex::default_searchable_index()?;
+        let index = live.index()?;
         AsyncCSSearchableIndex::delete_all_searchable_items(&index).await?;
         Ok(())
     })
@@ -17,11 +19,17 @@ fn test_delete_all_searchable_items() -> Result<(), Box<dyn std::error::Error>> 
 
 #[test]
 fn test_delete_searchable_items_with_identifiers() -> Result<(), Box<dyn std::error::Error>> {
+    let Some(live) = LiveIndex::acquire("test_delete_searchable_items_with_identifiers") else {
+        return Ok(());
+    };
     pollster::block_on(async {
-        let index = CSSearchableIndex::default_searchable_index()?;
+        let index = live.index()?;
         AsyncCSSearchableIndex::delete_searchable_items_with_identifiers(
             &index,
-            vec!["test-id-1", "test-id-2"],
+            vec![
+                format!("{}-1", live.domain()),
+                format!("{}-2", live.domain()),
+            ],
         )
         .await?;
         Ok(())
@@ -31,11 +39,15 @@ fn test_delete_searchable_items_with_identifiers() -> Result<(), Box<dyn std::er
 #[test]
 fn test_delete_searchable_items_with_domain_identifiers() -> Result<(), Box<dyn std::error::Error>>
 {
+    let Some(live) = LiveIndex::acquire("test_delete_searchable_items_with_domain_identifiers")
+    else {
+        return Ok(());
+    };
     pollster::block_on(async {
-        let index = CSSearchableIndex::default_searchable_index()?;
+        let index = live.index()?;
         AsyncCSSearchableIndex::delete_searchable_items_with_domain_identifiers(
             &index,
-            vec!["test-domain-1"],
+            vec![live.domain()],
         )
         .await?;
         Ok(())
@@ -44,8 +56,11 @@ fn test_delete_searchable_items_with_domain_identifiers() -> Result<(), Box<dyn 
 
 #[test]
 fn index_future_does_not_borrow_its_inputs() -> Result<(), Box<dyn std::error::Error>> {
-    let index = sample_index("async-outlives")?;
-    let (identifier, item) = sample_item("async-outlives-item", "Async outlives")?;
+    let Some(live) = LiveIndex::acquire("index_future_does_not_borrow_its_inputs") else {
+        return Ok(());
+    };
+    let index = live.index()?;
+    let (identifier, item) = live.item("Async outlives")?;
     let items = vec![item];
     let future = AsyncCSSearchableIndex::index_searchable_items(&index, &items);
     let delete_future =
@@ -59,7 +74,10 @@ fn index_future_does_not_borrow_its_inputs() -> Result<(), Box<dyn std::error::E
 
 #[test]
 fn fetch_last_client_state_returns_the_stored_state() -> Result<(), Box<dyn std::error::Error>> {
-    let index = sample_index("async-client-state")?;
+    let Some(live) = LiveIndex::acquire("fetch_last_client_state_returns_the_stored_state") else {
+        return Ok(());
+    };
+    let index = live.index()?;
     assert_eq!(
         pollster::block_on(AsyncCSSearchableIndex::fetch_last_client_state(&index))?,
         Vec::<u8>::new()

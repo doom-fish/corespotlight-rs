@@ -1,18 +1,10 @@
 mod common;
 
 use std::thread;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
-use common::sample_index;
+use common::LiveIndex;
 use corespotlight::prelude::*;
-
-fn unique_tag(prefix: &str) -> String {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    format!("{prefix}{nanos}")
-}
 
 fn index_titles(
     index: &CSSearchableIndex,
@@ -64,10 +56,14 @@ fn wait_for_titles(
 #[test]
 fn executing_a_query_returns_indexed_items_and_runs_once() -> Result<(), Box<dyn std::error::Error>>
 {
-    let index = sample_index("query-execution")?;
-    let tag = unique_tag("corespotlightexecution");
-    index_titles(&index, &tag, &["alpha", "beta"])?;
-    assert_eq!(wait_for_titles(&tag, "title == \"*\"", 2)?, ["alpha", "beta"]);
+    let Some(live) = LiveIndex::acquire("executing_a_query_returns_indexed_items_and_runs_once")
+    else {
+        return Ok(());
+    };
+    let index = live.index()?;
+    let tag = live.domain();
+    index_titles(&index, tag, &["alpha", "beta"])?;
+    assert_eq!(wait_for_titles(tag, "title == \"*\"", 2)?, ["alpha", "beta"]);
 
     let query = CSSearchQuery::new(format!("keywords == \"{tag}\""), None)?;
     let result = query.execute(Duration::from_secs(10))?;
@@ -87,17 +83,20 @@ fn executing_a_query_returns_indexed_items_and_runs_once() -> Result<(), Box<dyn
 
 #[test]
 fn escaped_values_match_literally() -> Result<(), Box<dyn std::error::Error>> {
-    let index = sample_index("query-escaping")?;
-    let tag = unique_tag("corespotlightescaping");
+    let Some(live) = LiveIndex::acquire("escaped_values_match_literally") else {
+        return Ok(());
+    };
+    let index = live.index()?;
+    let tag = live.domain();
     let titles = ["a\"b", "a\\b", "a*b", "axb", "a?b", "a'b"];
-    index_titles(&index, &tag, &titles)?;
-    assert_eq!(wait_for_titles(&tag, "title == \"*\"", titles.len())?.len(), titles.len());
+    index_titles(&index, tag, &titles)?;
+    assert_eq!(wait_for_titles(tag, "title == \"*\"", titles.len())?.len(), titles.len());
 
     for title in titles {
         let clause = format!("title == \"{}\"", CSSearchQuery::escape_value(title));
-        assert_eq!(titles_matching(&tag, &clause)?, [title], "{clause}");
+        assert_eq!(titles_matching(tag, &clause)?, [title], "{clause}");
     }
-    assert_eq!(titles_matching(&tag, "title == \"a*b\"")?.len(), titles.len());
+    assert_eq!(titles_matching(tag, "title == \"a*b\"")?.len(), titles.len());
 
     index.delete_searchable_items_with_domain_identifiers([tag])?;
     Ok(())

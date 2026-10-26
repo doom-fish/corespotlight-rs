@@ -25,9 +25,7 @@ pub fn sample_index(prefix: &str) -> Result<CSSearchableIndex, CoreSpotlightErro
     CSSearchableIndex::new(unique_label(prefix))
 }
 
-pub fn sample_attributes(
-    title: &str,
-) -> Result<CSSearchableItemAttributeSet, CoreSpotlightError> {
+pub fn sample_attributes(title: &str) -> Result<CSSearchableItemAttributeSet, CoreSpotlightError> {
     let attributes = CSSearchableItemAttributeSet::new("public.plain-text")?;
     attributes.set_title(Some(title))?;
     attributes.set_display_name(Some(title))?;

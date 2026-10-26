@@ -9,22 +9,22 @@ fn settings_constants_and_query_contexts_are_available() -> Result<(), Box<dyn s
     assert!(core_spotlight_api_version() > 0);
     let version_string = core_spotlight_version_string()?;
     assert!(version_string.contains("CoreSpotlight"));
-    assert!(!index_error_domain()?.is_empty());
-    assert!(!search_query_error_domain()?.is_empty());
-    assert!(!searchable_item_action_type()?.is_empty());
-    assert!(!searchable_item_activity_identifier()?.is_empty());
-    assert!(!query_continuation_action_type()?.is_empty());
+    assert_ne!(index_error_domain()?, "");
+    assert_ne!(search_query_error_domain()?, "");
+    assert_ne!(searchable_item_action_type()?, "");
+    assert_ne!(searchable_item_activity_identifier()?, "");
+    assert_ne!(query_continuation_action_type()?, "");
     assert_eq!(
         suggestion_highlight_attribute_name()?,
         String::from("CSSuggestionHighlightAttribute")
     );
-    assert!(!search_query_string_key()?.is_empty());
-    assert!(!mailbox_inbox()?.is_empty());
-    assert!(!mailbox_drafts()?.is_empty());
-    assert!(!mailbox_sent()?.is_empty());
-    assert!(!mailbox_junk()?.is_empty());
-    assert!(!mailbox_trash()?.is_empty());
-    assert!(!mailbox_archive()?.is_empty());
+    assert_ne!(search_query_string_key()?, "");
+    assert_ne!(mailbox_inbox()?, "");
+    assert_ne!(mailbox_drafts()?, "");
+    assert_ne!(mailbox_sent()?, "");
+    assert_ne!(mailbox_junk()?, "");
+    assert_ne!(mailbox_trash()?, "");
+    assert_ne!(mailbox_archive()?, "");
 
     let search_context = CSSearchQueryContext::new()?;
     search_context.set_fetch_attributes(["title", "displayName"])?;
